@@ -54,43 +54,40 @@ if not st.session_state.logeado:
         st.write("### Crear cuenta")
         new_user = st.text_input("Nombre completo")
         new_tel = st.text_input("Teléfono")
-        new_pass = st.text_input("Crea una Contraseña", type="password")
+        new_pass = st.text_input("Contraseña ", type="password")
         new_role = st.radio("Se identifica como:", ["Campesino", "Transportador", "Negocio"])
-        btn_reg = st.button("Finalizar Registro")
         
-        if btn_reg:
+        if st.button("Continuar"):
             if new_user and new_tel and new_pass:
-                # CREAR EL DATO
-                nuevo_row = pd.DataFrame([{
-                    "Nombre": new_user,
-                    "Telefono": new_tel,
-                    "Contraseña": new_pass,
-                    "Rol": new_role
-                }])
+                # CREAMOS EL DATO
+                nuevo_usuario = pd.DataFrame([{"Nombre": new_user, "Telefono": new_tel, "Contraseña": new_pass, "Rol": new_role}])
                 
-                # ESCRIBIR EN GOOGLE SHEETS USANDO APPEND
                 try:
-                    conn.create(
-                        worksheet="Usuarios", 
-                        data=nuevo_row,
-                    )
-                    # Nota: En la librería de Streamlit GSheets, 
-                    # si la tabla ya existe, 'create' con datos nuevos 
-                    # actúa como un append o inserción.
+                    # 1. INTENTAMOS LEER PRIMERO CON SEGURIDAD
+                    try:
+                        df_existente = conn.read(worksheet="Usuarios")
+                        df_final = pd.concat([df_existente, nuevo_usuario], ignore_index=True)
+                    except:
+                        # Si la hoja está vacía o da error de lectura, el final es solo el nuevo
+                        df_final = nuevo_usuario
+                    
+                    # 2. INTENTAMOS GUARDAR
+                    conn.update(worksheet="Usuarios", data=df_final)
+                    
+                    # 3. SI TODO SALE BIEN, INICIAMOS SESIÓN
+                    st.session_state.logeado = True
+                    st.session_state.usuario_tipo = new_role
+                    st.session_state.nombre_usuario = new_user
+                    st.success("¡Registro exitoso en la nube!")
+                    st.balloons()
+                    st.rerun()
+                    
                 except Exception as e:
-                    # Alternativa manual si create falla:
-                    existentes = conn.read(worksheet="Usuarios")
-                    actualizado = pd.concat([existentes, nuevo_row], ignore_index=True)
-                    conn.update(worksheet="Usuarios", data=actualizado)
-                
-                st.session_state.logeado = True
-                st.session_state.usuario_tipo = new_role
-                st.session_state.nombre_usuario = new_user
-                st.balloons()
-                st.success("¡Cuenta creada exitosamente!")
-                st.rerun()
+                    # Si falla por permisos o URL, nos avisará aquí
+                    st.error(f"Error de conexión con Google Sheets: {e}")
+                    st.info("Revisa que el link en Secrets termine en /edit y que seas Editor.")
             else:
-                st.error("Por favor completa todos los campos")
+                st.warning("Por favor, completa todos los campos para crear tu cuenta.")
 
 # --- 2. VISTAS SEGÚN PERFIL (DENTRO DE LA APP) ---
 else:
