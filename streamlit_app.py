@@ -7,7 +7,7 @@ st.set_page_config(page_title="Agrocadena 🌱", layout="centered")
 
 # --- CONEXIÓN A GOOGLE SHEETS ---
 # Forzamos a la conexión a usar los secretos explícitamente
-conn = st.connection("gsheets", type=GSheetsConnection, **st.secrets["connections"]["gsheets"])
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
 if 'logeado' not in st.session_state:
