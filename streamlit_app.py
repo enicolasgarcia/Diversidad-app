@@ -68,13 +68,20 @@ if not st.session_state.logeado:
                     "Rol": new_role
                 }])
                 
-                # ESCRIBIR EN GOOGLE SHEETS
+                # ESCRIBIR EN GOOGLE SHEETS USANDO APPEND
                 try:
+                    conn.create(
+                        worksheet="Usuarios", 
+                        data=nuevo_row,
+                    )
+                    # Nota: En la librería de Streamlit GSheets, 
+                    # si la tabla ya existe, 'create' con datos nuevos 
+                    # actúa como un append o inserción.
+                except Exception as e:
+                    # Alternativa manual si create falla:
                     existentes = conn.read(worksheet="Usuarios")
                     actualizado = pd.concat([existentes, nuevo_row], ignore_index=True)
                     conn.update(worksheet="Usuarios", data=actualizado)
-                except:
-                    conn.update(worksheet="Usuarios", data=nuevo_row)
                 
                 st.session_state.logeado = True
                 st.session_state.usuario_tipo = new_role
@@ -122,12 +129,19 @@ else:
                         "Valor": valor
                     }])
                     try:
-                        c_existentes = conn.read(worksheet="Calculadora")
-                        c_actualizado = pd.concat([c_existentes, nuevo_gasto], ignore_index=True)
-                        conn.update(worksheet="Calculadora", data=c_actualizado)
+                        # --- AQUÍ ESTÁ EL CAMBIO ---
+                        # Intentamos insertar directamente (append)
+                        conn.create(worksheet="Calculadora", data=nuevo_gasto)
+                        st.success("¡Gasto guardado exitosamente!")
                     except:
-                        conn.update(worksheet="Calculadora", data=nuevo_gasto)
-                    st.success("¡Costo registrado!")
+                        # Si falla el método directo, usamos el respaldo de leer y actualizar
+                        try:
+                            c_existentes = conn.read(worksheet="Calculadora")
+                            c_actualizado = pd.concat([c_existentes, nuevo_gasto], ignore_index=True)
+                            conn.update(worksheet="Calculadora", data=c_actualizado)
+                            st.success("¡Gasto guardado (vía actualización)!")
+                        except Exception as e:
+                            st.error(f"Error al guardar: {e}")
 
             st.markdown("---")
             st.write("### Mis Gastos Registrados")
