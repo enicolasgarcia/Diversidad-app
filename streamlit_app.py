@@ -6,7 +6,7 @@ import pandas as pd
 st.set_page_config(page_title="Agrocadena 🌱", layout="centered")
 
 # --- CONEXIÓN A GOOGLE SHEETS ---
-conn = st.connection("gsheets", type=GSheetsConnection)
+conn = st.connection("gsheets", type=GSheetsConnection, ttl=0)
 
 # --- INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
 if 'logeado' not in st.session_state:
