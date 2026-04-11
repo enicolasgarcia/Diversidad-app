@@ -30,7 +30,6 @@ if not st.session_state.logeado:
             btn_login = st.form_submit_button("Entrar")
             
             if btn_login:
-                # Intento de validación simple
                 try:
                     df_usuarios = conn.read(worksheet="Usuarios")
                     validar = df_usuarios[(df_usuarios['Nombre'] == user) & (df_usuarios['Contraseña'] == password)]
@@ -43,19 +42,21 @@ if not st.session_state.logeado:
                     else:
                         st.error("Usuario o contraseña incorrectos")
                 except:
-                    # Si la hoja está vacía o no existe, permitimos entrar como invitado de prueba
                     st.warning("No se pudo validar en la base de datos. Entrando como prueba.")
                     st.session_state.logeado = True
                     st.session_state.nombre_usuario = user
                     st.session_state.usuario_tipo = "Campesino"
                     st.rerun()
 
-    new_role = st.radio("Se identifica como:", ["Campesino", "Transportador", "Negocio"])
+    with tab2:
+        st.write("### Crear cuenta")
+        new_user = st.text_input("Nombre completo")
+        new_tel = st.text_input("Teléfono")
+        new_pass = st.text_input("Crea una Contraseña", type="password")
+        new_role = st.radio("Se identifica como:", ["Campesino", "Transportador", "Negocio"])
         
-        # Este es tu botón:
-    if st.button("Finalizar Registro"):
+        if st.button("Finalizar Registro"):
             if new_user and new_tel and new_pass:
-                # 1. CREAMOS EL DATO
                 nuevo_usuario = pd.DataFrame([{
                     "Nombre": new_user, 
                     "Telefono": new_tel, 
@@ -64,14 +65,14 @@ if not st.session_state.logeado:
                 }])
                 
                 try:
-                    # 2. INTENTAMOS LA CONEXIÓN
+                    # Intentamos leer datos existentes para no sobrescribir
                     try:
                         df_actual = conn.read(worksheet="Usuarios")
                         df_final = pd.concat([df_actual, nuevo_usuario], ignore_index=True)
                     except:
                         df_final = nuevo_usuario
                     
-                    # 3. GUARDAMOS
+                    # Guardar en Google Sheets
                     conn.update(worksheet="Usuarios", data=df_final)
                     
                     st.session_state.logeado = True
@@ -82,6 +83,7 @@ if not st.session_state.logeado:
                     st.rerun()
                 except Exception as e:
                     st.error(f"Error de conexión: {e}")
+                    st.info("Nota: Si el error persiste, verifica los permisos de 'Editor' en tu Google Sheets.")
             else:
                 st.warning("Por favor completa todos los campos")
 
@@ -122,19 +124,16 @@ else:
                         "Valor": valor
                     }])
                     try:
-                        # --- AQUÍ ESTÁ EL CAMBIO ---
-                        # Intentamos insertar directamente (append)
-                        conn.create(worksheet="Calculadora", data=nuevo_gasto)
-                        st.success("¡Gasto guardado exitosamente!")
-                    except:
-                        # Si falla el método directo, usamos el respaldo de leer y actualizar
                         try:
                             c_existentes = conn.read(worksheet="Calculadora")
                             c_actualizado = pd.concat([c_existentes, nuevo_gasto], ignore_index=True)
-                            conn.update(worksheet="Calculadora", data=c_actualizado)
-                            st.success("¡Gasto guardado (vía actualización)!")
-                        except Exception as e:
-                            st.error(f"Error al guardar: {e}")
+                        except:
+                            c_actualizado = nuevo_gasto
+                            
+                        conn.update(worksheet="Calculadora", data=c_actualizado)
+                        st.success("¡Gasto guardado exitosamente!")
+                    except Exception as e:
+                        st.error(f"Error al guardar: {e}")
 
             st.markdown("---")
             st.write("### Mis Gastos Registrados")
