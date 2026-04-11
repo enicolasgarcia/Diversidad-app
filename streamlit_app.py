@@ -62,15 +62,8 @@ if not st.session_state.logeado:
                 # CREAMOS EL DATO
                 nuevo_usuario = pd.DataFrame([{"Nombre": new_user, "Telefono": new_tel, "Contraseña": new_pass, "Rol": new_role}])
                 
-                try:
-                    # CONVERTIMOS EL LINK PARA DESCARGAR/SUBIR
-                    # Esto transforma tu link normal en un link de exportación directa
-                    sheet_id = "1ZgC9WKEDizBiM8MsSFUMcuJ862Ogu-8SBw58yvMUL3w"
-                    url_usuarios = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-                    
-                    # 1. Leemos los datos actuales con Pandas directamente
-                    try:
-                    # 1. Leemos los datos actuales (Si falla, asumimos que está vacío)
+               try:
+                    # 1. Leemos los datos actuales
                     try:
                         df_actual = conn.read(worksheet="Usuarios")
                     except:
@@ -89,13 +82,8 @@ if not st.session_state.logeado:
                     st.success("¡Registro exitoso!")
                     st.balloons()
                     st.rerun()
-                    
                 except Exception as e:
-                    # Si esto falla, el error nos dirá la verdad absoluta
                     st.error(f"Error definitivo: {e}")
-                    st.info("Si el error menciona 'Service Account', es hora de crear la llave de Google.")
-            else:
-                st.warning("Por favor, completa todos los campos para crear tu cuenta.")
 
 # --- 2. VISTAS SEGÚN PERFIL (DENTRO DE LA APP) ---
 else:
