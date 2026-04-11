@@ -50,32 +50,30 @@ if not st.session_state.logeado:
                     st.session_state.usuario_tipo = "Campesino"
                     st.rerun()
 
-    with tab2:
-        st.write("### Crear cuenta")
-        new_user = st.text_input("Nombre completo")
-        new_tel = st.text_input("Teléfono")
-        new_pass = st.text_input("Contraseña ", type="password")
-        new_role = st.radio("Se identifica como:", ["Campesino", "Transportador", "Negocio"])
+    new_role = st.radio("Se identifica como:", ["Campesino", "Transportador", "Negocio"])
         
-        if st.button("Continuar"):
+        # Este es tu botón:
+    if st.button("Finalizar Registro"):
             if new_user and new_tel and new_pass:
-                # CREAMOS EL DATO
-                nuevo_usuario = pd.DataFrame([{"Nombre": new_user, "Telefono": new_tel, "Contraseña": new_pass, "Rol": new_role}])
+                # 1. CREAMOS EL DATO
+                nuevo_usuario = pd.DataFrame([{
+                    "Nombre": new_user, 
+                    "Telefono": new_tel, 
+                    "Contraseña": new_pass, 
+                    "Rol": new_role
+                }])
                 
-               try:
-                    # 1. Leemos los datos actuales
+                try:
+                    # 2. INTENTAMOS LA CONEXIÓN
                     try:
                         df_actual = conn.read(worksheet="Usuarios")
+                        df_final = pd.concat([df_actual, nuevo_usuario], ignore_index=True)
                     except:
-                        df_actual = pd.DataFrame(columns=["Nombre", "Telefono", "Contraseña", "Rol"])
+                        df_final = nuevo_usuario
                     
-                    # 2. Unimos el nuevo usuario
-                    df_final = pd.concat([df_actual, nuevo_usuario], ignore_index=True)
-                    
-                    # 3. Intentamos la escritura definitiva
+                    # 3. GUARDAMOS
                     conn.update(worksheet="Usuarios", data=df_final)
                     
-                    # 4. Si llegamos aquí, ¡lo logramos!
                     st.session_state.logeado = True
                     st.session_state.usuario_tipo = new_role
                     st.session_state.nombre_usuario = new_user
@@ -83,7 +81,9 @@ if not st.session_state.logeado:
                     st.balloons()
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Error definitivo: {e}")
+                    st.error(f"Error de conexión: {e}")
+            else:
+                st.warning("Por favor completa todos los campos")
 
 # --- 2. VISTAS SEGÚN PERFIL (DENTRO DE LA APP) ---
 else:
