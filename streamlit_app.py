@@ -30,31 +30,63 @@ if not st.session_state.logeado:
             btn_login = st.form_submit_button("Entrar")
             
             if btn_login:
-                # Aquí podrías validar contra la pestaña "Usuarios" más adelante
-                st.session_state.logeado = True
-                st.session_state.nombre_usuario = user
-                st.session_state.usuario_tipo = "Campesino" # Por defecto para prueba
-                st.success("¡Bienvenido!")
-                st.rerun()
+                # Intento de validación simple
+                try:
+                    df_usuarios = conn.read(worksheet="Usuarios")
+                    validar = df_usuarios[(df_usuarios['Nombre'] == user) & (df_usuarios['Contraseña'] == password)]
+                    if not validar.empty:
+                        st.session_state.logeado = True
+                        st.session_state.nombre_usuario = user
+                        st.session_state.usuario_tipo = validar.iloc[0]['Rol']
+                        st.success(f"¡Bienvenido de nuevo, {user}!")
+                        st.rerun()
+                    else:
+                        st.error("Usuario o contraseña incorrectos")
+                except:
+                    # Si la hoja está vacía o no existe, permitimos entrar como invitado de prueba
+                    st.warning("No se pudo validar en la base de datos. Entrando como prueba.")
+                    st.session_state.logeado = True
+                    st.session_state.nombre_usuario = user
+                    st.session_state.usuario_tipo = "Campesino"
+                    st.rerun()
 
     with tab2:
         st.write("### Crear cuenta")
         new_user = st.text_input("Nombre completo")
         new_tel = st.text_input("Teléfono")
+        new_pass = st.text_input("Crea una Contraseña", type="password")
         new_role = st.radio("Se identifica como:", ["Campesino", "Transportador", "Negocio"])
-        btn_reg = st.button("Continuar")
+        btn_reg = st.button("Finalizar Registro")
         
         if btn_reg:
-            # Lógica para guardar en pestaña 'Usuarios' más tarde
-            st.session_state.logeado = True
-            st.session_state.usuario_tipo = new_role
-            st.session_state.nombre_usuario = new_user
-            st.balloons()
-            st.rerun()
+            if new_user and new_tel and new_pass:
+                # CREAR EL DATO
+                nuevo_row = pd.DataFrame([{
+                    "Nombre": new_user,
+                    "Telefono": new_tel,
+                    "Contraseña": new_pass,
+                    "Rol": new_role
+                }])
+                
+                # ESCRIBIR EN GOOGLE SHEETS
+                try:
+                    existentes = conn.read(worksheet="Usuarios")
+                    actualizado = pd.concat([existentes, nuevo_row], ignore_index=True)
+                    conn.update(worksheet="Usuarios", data=actualizado)
+                except:
+                    conn.update(worksheet="Usuarios", data=nuevo_row)
+                
+                st.session_state.logeado = True
+                st.session_state.usuario_tipo = new_role
+                st.session_state.nombre_usuario = new_user
+                st.balloons()
+                st.success("¡Cuenta creada exitosamente!")
+                st.rerun()
+            else:
+                st.error("Por favor completa todos los campos")
 
 # --- 2. VISTAS SEGÚN PERFIL (DENTRO DE LA APP) ---
 else:
-    # Sidebar común
     st.sidebar.title(f"Hola, {st.session_state.nombre_usuario}")
     st.sidebar.write(f"Perfil: **{st.session_state.usuario_tipo}**")
     
@@ -65,7 +97,7 @@ else:
     # --- FLUJO 🧑‍🌾 CAMPESINO ---
     if st.session_state.usuario_tipo == "Campesino":
         st.title("🧑‍🌾 Panel del Productor")
-        menu = st.sidebar.selectbox("Menú", ["🏠 Resumen", "📦 Publicar Cultivo", "🚜 Mis Costos"])
+        menu = st.sidebar.selectbox("Menú", ["🏠 Resumen", "💰 Calculadora de Costos", "📦 Publicar Cultivo"])
 
         if menu == "🏠 Resumen":
             st.markdown("#### Estado de tus ventas")
@@ -73,6 +105,41 @@ else:
             col1.metric("Ingresos Mes", "$1.2M", "+5%")
             col2.metric("Pedidos Activos", "3")
             
+        elif menu == "💰 Calculadora de Costos":
+            st.subheader("🚜 Tu Calculadora de Producción")
+            st.write("Registra tus gastos para calcular tu rentabilidad.")
+            
+            with st.form("form_costos"):
+                col_a, col_b = st.columns(2)
+                item = col_a.text_input("Concepto (Ej: Semillas, Fertilizante)")
+                valor = col_b.number_input("Costo del Insumo ($)", min_value=0)
+                btn_gasto = st.form_submit_button("Guardar en mi histórico")
+                
+                if btn_gasto:
+                    nuevo_gasto = pd.DataFrame([{
+                        "Usuario": st.session_state.nombre_usuario,
+                        "Concepto": item,
+                        "Valor": valor
+                    }])
+                    try:
+                        c_existentes = conn.read(worksheet="Calculadora")
+                        c_actualizado = pd.concat([c_existentes, nuevo_gasto], ignore_index=True)
+                        conn.update(worksheet="Calculadora", data=c_actualizado)
+                    except:
+                        conn.update(worksheet="Calculadora", data=nuevo_gasto)
+                    st.success("¡Costo registrado!")
+
+            st.markdown("---")
+            st.write("### Mis Gastos Registrados")
+            try:
+                historial = conn.read(worksheet="Calculadora")
+                filtro = historial[historial['Usuario'] == st.session_state.nombre_usuario]
+                st.dataframe(filtro, use_container_width=True)
+                total = filtro['Valor'].sum()
+                st.metric("Total Inversión", f"${total:,.0f}")
+            except:
+                st.info("Aún no tienes gastos registrados.")
+
         elif menu == "📦 Publicar Cultivo":
             st.subheader("Anuncia tu próxima cosecha")
             with st.form("pub_cultivo"):
@@ -81,9 +148,6 @@ else:
                 pre = st.number_input("Precio por kg ($)")
                 if st.form_submit_button("Publicar en Marketplace"):
                     st.success(f"¡Tu {prod} ya está disponible para los restaurantes!")
-
-        elif menu == "🚜 Mis Costos":
-            st.info("Aquí conectaremos con tu pestaña antigua de cálculos financieros.")
 
     # --- FLUJO 🚛 TRANSPORTADOR ---
     elif st.session_state.usuario_tipo == "Transportador":
@@ -106,7 +170,6 @@ else:
         st.title("🏪 Portal de Compras")
         st.subheader("🛒 Frutas y Verduras Frescas")
         
-        # Simulación de catálogo
         col1, col2 = st.columns(2)
         with col1:
             st.image("https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?q=80&w=200", caption="Papa Sabanera")
@@ -117,6 +180,6 @@ else:
             st.write("$3.500 / kg")
             st.button("Comprar Tomate")
 
-# Menú inferior visual (opcional informativo)
+# Menú inferior
 st.sidebar.markdown("---")
-st.sidebar.caption("Agrocadena v1.0 - Gestión de Datos Agronegocios")
+st.sidebar.caption("Agrocadena v1.1 - Gestión de Datos")
