@@ -63,29 +63,32 @@ if not st.session_state.logeado:
                 nuevo_usuario = pd.DataFrame([{"Nombre": new_user, "Telefono": new_tel, "Contraseña": new_pass, "Rol": new_role}])
                 
                 try:
-                    # 1. INTENTAMOS LEER PRIMERO CON SEGURIDAD
+                    # CONVERTIMOS EL LINK PARA DESCARGAR/SUBIR
+                    # Esto transforma tu link normal en un link de exportación directa
+                    sheet_id = "1ZgC9WKEDizBiM8MsSFUMcuJ862Ogu-8SBw58yvMUL3w"
+                    url_usuarios = f"https://docs.google.com/spreadsheets/d/{sheet_id}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+                    
+                    # 1. Leemos los datos actuales con Pandas directamente
                     try:
-                        df_existente = conn.read(worksheet="Usuarios")
+                        df_existente = pd.read_csv(url_usuarios)
                         df_final = pd.concat([df_existente, nuevo_usuario], ignore_index=True)
                     except:
-                        # Si la hoja está vacía o da error de lectura, el final es solo el nuevo
                         df_final = nuevo_usuario
                     
-                    # 2. INTENTAMOS GUARDAR
+                    # 2. Intentamos guardar usando la conexión (aquí es donde puede pedir Service Account)
+                    # Si esto sigue fallando, la única opción es la Service Account
                     conn.update(worksheet="Usuarios", data=df_final)
                     
-                    # 3. SI TODO SALE BIEN, INICIAMOS SESIÓN
                     st.session_state.logeado = True
                     st.session_state.usuario_tipo = new_role
                     st.session_state.nombre_usuario = new_user
-                    st.success("¡Registro exitoso en la nube!")
+                    st.success("¡Registro exitoso!")
                     st.balloons()
                     st.rerun()
                     
                 except Exception as e:
-                    # Si falla por permisos o URL, nos avisará aquí
-                    st.error(f"Error de conexión con Google Sheets: {e}")
-                    st.info("Revisa que el link en Secrets termine en /edit y que seas Editor.")
+                    st.error("Google requiere una 'Service Account' para escribir datos.")
+                    st.info("Para arreglar esto, necesitamos generar un archivo JSON de credenciales en Google Cloud.")
             else:
                 st.warning("Por favor, completa todos los campos para crear tu cuenta.")
 
