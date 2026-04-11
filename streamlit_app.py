@@ -6,8 +6,8 @@ import pandas as pd
 st.set_page_config(page_title="Agrocadena 🌱", layout="centered")
 
 # --- CONEXIÓN A GOOGLE SHEETS ---
-# Agregamos ttl=0 para que no guarde errores viejos en memoria
-conn = st.connection("gsheets", type=GSheetsConnection, ttl=0)
+# Forzamos a la conexión a usar los secretos explícitamente
+conn = st.connection("gsheets", type=GSheetsConnection, **st.secrets["connections"]["gsheets"])
 
 # --- INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
 if 'logeado' not in st.session_state:
