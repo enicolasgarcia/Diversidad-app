@@ -70,15 +70,19 @@ if not st.session_state.logeado:
                     
                     # 1. Leemos los datos actuales con Pandas directamente
                     try:
-                        df_existente = pd.read_csv(url_usuarios)
-                        df_final = pd.concat([df_existente, nuevo_usuario], ignore_index=True)
+                    # 1. Leemos los datos actuales (Si falla, asumimos que está vacío)
+                    try:
+                        df_actual = conn.read(worksheet="Usuarios")
                     except:
-                        df_final = nuevo_usuario
+                        df_actual = pd.DataFrame(columns=["Nombre", "Telefono", "Contraseña", "Rol"])
                     
-                    # 2. Intentamos guardar usando la conexión (aquí es donde puede pedir Service Account)
-                    # Si esto sigue fallando, la única opción es la Service Account
+                    # 2. Unimos el nuevo usuario
+                    df_final = pd.concat([df_actual, nuevo_usuario], ignore_index=True)
+                    
+                    # 3. Intentamos la escritura definitiva
                     conn.update(worksheet="Usuarios", data=df_final)
                     
+                    # 4. Si llegamos aquí, ¡lo logramos!
                     st.session_state.logeado = True
                     st.session_state.usuario_tipo = new_role
                     st.session_state.nombre_usuario = new_user
@@ -87,8 +91,9 @@ if not st.session_state.logeado:
                     st.rerun()
                     
                 except Exception as e:
-                    st.error("Google requiere una 'Service Account' para escribir datos.")
-                    st.info("Para arreglar esto, necesitamos generar un archivo JSON de credenciales en Google Cloud.")
+                    # Si esto falla, el error nos dirá la verdad absoluta
+                    st.error(f"Error definitivo: {e}")
+                    st.info("Si el error menciona 'Service Account', es hora de crear la llave de Google.")
             else:
                 st.warning("Por favor, completa todos los campos para crear tu cuenta.")
 
