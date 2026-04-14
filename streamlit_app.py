@@ -62,27 +62,26 @@ if not st.session_state.logeado:
                 }])
                 
                 try:
-                    # Intentamos leer para anexar
-                    try:
-                        existentes = conn.read(worksheet="Usuarios")
-                        actualizado = pd.concat([existentes, nuevo_row], ignore_index=True)
-                    except:
-                        actualizado = nuevo_row
+                    # 1. Intentamos leer la hoja Usuarios
+                    df_existente = conn.read(worksheet="Usuarios")
+                    df_final = pd.concat([df_existente, nuevo_row], ignore_index=True)
                     
-                    # GUARDAR (Aquí es donde la Service Account entra en acción)
-                    conn.update(worksheet="Usuarios", data=actualizado)
+                    # 2. Intentamos guardar los datos actualizados
+                    conn.update(worksheet="Usuarios", data=df_final)
                     
+                    # 3. Si todo sale bien, iniciamos sesión
                     st.session_state.logeado = True
                     st.session_state.usuario_tipo = new_role
                     st.session_state.nombre_usuario = new_user
                     st.balloons()
                     st.success("¡Cuenta creada exitosamente!")
                     st.rerun()
+                    
                 except Exception as e:
-                    # ESTO NOS DIRÁ EL ERROR REAL
-                    st.error("🚨 ERROR CRÍTICO DE GOOGLE:")
-                    st.code(str(e)) 
-                    st.info("Si el error arriba dice '403' o 'Permission Denied', es que falta compartir el Excel con el correo de la cuenta de servicio.")
+                    # ESTO ES LO MÁS IMPORTANTE: Nos mostrará el rastro real del error
+                    st.error("🚨 DETALLES DEL ERROR:")
+                    st.exception(e) 
+                    st.info("Revisa si el error menciona 'Permission denied' o '403'.")
             else:
                 st.warning("Por favor completa todos los campos")
 
