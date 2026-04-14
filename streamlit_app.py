@@ -63,7 +63,8 @@ if not st.session_state.logeado:
                 
                 try:
                     # 1. Intentamos leer la hoja Usuarios
-                    df_existente = conn.read(worksheet="Usuarios")
+                    # En lugar de usar conn.read, usa esto que es más directo:
+                    df_existente = conn.read(worksheet="Usuarios", usecols=[0,1,2,3])
                     df_final = pd.concat([df_existente, nuevo_row], ignore_index=True)
                     
                     # 2. Intentamos guardar los datos actualizados
