@@ -3,10 +3,9 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
 # --- CONFIGURACIÓN DE PANTALLA ---
-st.set_page_config(page_title="Agrocadena 🌱", layout="centered")
+st.set_page_config(page_title="Agrocadena 🌱", layout="wide") # Cambiado a wide para mejor visualización
 
 # --- CONEXIÓN A GOOGLE SHEETS ---
-# Forzamos a la conexión a usar los secretos explícitamente
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- INICIALIZACIÓN DE VARIABLES DE SESIÓN ---
@@ -17,7 +16,13 @@ if 'usuario_tipo' not in st.session_state:
 if 'nombre_usuario' not in st.session_state:
     st.session_state.nombre_usuario = ""
 
-# --- 1. PANTALLA DE INICIO ---
+# --- DATOS DE REFERENCIA (Precios Corabastos) ---
+precios_corabastos = {
+    "Papa": 2800, "Tomate": 3200, "Cebolla": 1800, 
+    "Café": 11000, "Mango": 4500, "Zanahoria": 1500
+}
+
+# --- 1. PANTALLA DE INICIO (Login/Registro) ---
 if not st.session_state.logeado:
     st.title("🌱 Agrocadena")
     st.markdown("### Conectando el campo con la ciudad")
@@ -43,7 +48,7 @@ if not st.session_state.logeado:
                     else:
                         st.error("Usuario o contraseña incorrectos")
                 except Exception as e:
-                    st.error(f"Error al leer usuarios: {e}")
+                    st.error(f"Error al conectar: Comparta el Excel con el correo de la Service Account.")
 
     with tab2:
         st.write("### Crear cuenta")
@@ -54,37 +59,18 @@ if not st.session_state.logeado:
         
         if st.button("Finalizar Registro"):
             if new_user and new_tel and new_pass:
-                nuevo_row = pd.DataFrame([{
-                    "Nombre": new_user, 
-                    "Telefono": new_tel, 
-                    "Contraseña": new_pass, 
-                    "Rol": new_role
-                }])
-                
+                nuevo_row = pd.DataFrame([{"Nombre": new_user, "Telefono": new_tel, "Contraseña": new_pass, "Rol": new_role}])
                 try:
-                    # 1. Intentamos leer la hoja Usuarios
-                    # En lugar de usar conn.read, usa esto que es más directo:
                     df_existente = conn.read(worksheet="Usuarios", usecols=[0,1,2,3])
                     df_final = pd.concat([df_existente, nuevo_row], ignore_index=True)
-                    
-                    # 2. Intentamos guardar los datos actualizados
                     conn.update(worksheet="Usuarios", data=df_final)
-                    
-                    # 3. Si todo sale bien, iniciamos sesión
                     st.session_state.logeado = True
-                    st.session_state.usuario_tipo = new_role
                     st.session_state.nombre_usuario = new_user
+                    st.session_state.usuario_tipo = new_role
                     st.balloons()
-                    st.success("¡Cuenta creada exitosamente!")
                     st.rerun()
-                    
                 except Exception as e:
-                    # ESTO ES LO MÁS IMPORTANTE: Nos mostrará el rastro real del error
-                    st.error("🚨 DETALLES DEL ERROR:")
-                    st.exception(e) 
-                    st.info("Revisa si el error menciona 'Permission denied' o '403'.")
-            else:
-                st.warning("Por favor completa todos los campos")
+                    st.error("Error de permisos. Verifique los Secrets y el botón Compartir del Excel.")
 
 # --- 2. VISTAS SEGÚN PERFIL ---
 else:
@@ -95,7 +81,87 @@ else:
         st.session_state.logeado = False
         st.rerun()
 
+    # --- PERFIL CAMPESINO ---
     if st.session_state.usuario_tipo == "Campesino":
         st.title("🧑‍🌾 Panel del Productor")
-        st.write("Bienvenido a tu panel de control.")
-        # ... resto del código del campesino ...
+        
+        # A. FORMULARIO DE FINCA
+        with st.expander("📝 Registrar Datos de mi Finca / Cultivo", expanded=False):
+            with st.form("form_finca"):
+                c1, c2 = st.columns(2)
+                with c1:
+                    nom_finca = st.text_input("Nombre de la Finca")
+                    cultivo = st.selectbox("Cultivo", list(precios_corabastos.keys()))
+                    inv_ini = st.number_input("Inversión Inicial ($)", min_value=0)
+                    costo_mes = st.number_input("Costo Mensual ($)", min_value=0)
+                with c2:
+                    prod_est = st.number_input("Producción Est. (Kilos)", min_value=1)
+                    precio_v = st.number_input("Tu Precio de Venta por Kg ($)", min_value=0)
+                    ubicacion = st.text_input("Departamento/Municipio")
+                    meses = st.number_input("Duración del cultivo (meses)", min_value=1)
+                
+                if st.form_submit_button("Guardar Datos"):
+                    nueva_finca = pd.DataFrame([{
+                        "Productor": st.session_state.nombre_usuario, "Finca": nom_finca,
+                        "Cultivo": cultivo, "Inversion": inv_ini, "Costo_Mensual": costo_mes,
+                        "Produccion": prod_est, "Unidad": "Kilos", "Ubicacion": ubicacion,
+                        "Meses": meses, "Precio_Venta": precio_v
+                    }])
+                    try:
+                        df_f = conn.read(worksheet="Fincas")
+                        df_f_final = pd.concat([df_f, nueva_finca], ignore_index=True)
+                        conn.update(worksheet="Fincas", data=df_f_final)
+                        st.success("¡Datos guardados!")
+                        st.rerun()
+                    except:
+                        conn.update(worksheet="Fincas", data=nueva_finca)
+                        st.rerun()
+
+        # B. DASHBOARD DE ANÁLISIS
+        try:
+            df_fincas = conn.read(worksheet="Fincas")
+            mis_fincas = df_fincas[df_fincas['Productor'] == st.session_state.nombre_usuario]
+
+            if not mis_fincas.empty:
+                st.markdown("---")
+                st.subheader("📊 Análisis y Diagnóstico")
+                finca_sel = st.selectbox("Selecciona tu finca", mis_fincas['Finca'].unique())
+                f = mis_fincas[mis_fincas['Finca'] == finca_sel].iloc[0]
+
+                # Cálculos
+                costo_total = f['Inversion'] + (f['Costo_Mensual'] * f['Meses'])
+                costo_kg = costo_total / f['Produccion']
+                precio_mercado = precios_corabastos.get(f['Cultivo'], 3000)
+                ganancia = (f['Precio_Venta'] - costo_kg) * f['Produccion']
+                brecha = precio_mercado - f['Precio_Venta']
+
+                # Visualización
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric("Costo/Kg", f"${costo_kg:,.0f}")
+                m2.metric("Producción", f"{f['Produccion']:,} Kg", f"{f['Produccion']/50:.1f} bultos")
+                m3.metric("Eficiencia", f"{(precio_mercado/costo_kg*100):.1f}%" if costo_kg >0 else "0%")
+                m4.metric("Ganancia Est.", f"${ganancia:,.0f}", delta=ganancia)
+
+                st.subheader("⚖️ Comparativa Corabastos")
+                c_a, c_b, c_c = st.columns(3)
+                c_a.metric(f"Precio Corabastos", f"${precio_mercado:,.0f}")
+                c_b.metric("Tu Precio", f"${f['Precio_Venta']:,.0f}")
+                c_c.metric("Brecha", f"${brecha:,.0f}", delta=-brecha)
+
+                # Recomendación
+                if ganancia < 0:
+                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA. Plan de Acción: Reducir costos urgentemente.")
+                else:
+                    st.success(f"✅ ¡Buen margen! Plan de Acción: Mantener calidad y buscar venta directa.")
+            else:
+                st.info("Aún no has registrado datos de finca. Usa el formulario de arriba.")
+        except:
+            st.info("Registra tu primera finca para ver el análisis.")
+
+    elif st.session_state.usuario_tipo == "Negocio":
+        st.title("🏪 Panel de Negocios")
+        st.write("Próximamente: Catálogo de productos directo del campo.")
+
+    elif st.session_state.usuario_tipo == "Transportador":
+        st.title("🚛 Panel Logístico")
+        st.write("Próximamente: Rutas disponibles para recolección.")
