@@ -201,13 +201,13 @@ else:
                     # Leemos la nueva pestaña de Ofertas
                     df_o_read = conn.read(worksheet="Ofertas", ttl=0)
                     # Limpiamos el nombre del usuario actual (quitar espacios y pasar a minúsculas)
-            usuario_clean = str(st.session_state.nombre_usuario).strip().lower()
+                    usuario_clean = str(st.session_state.nombre_usuario).strip().lower()
             
-            # Limpiamos la columna de la base de datos para comparar igual a igual
-            df_o_read['Productor_Match'] = df_o_read['Productor'].astype(str).str.strip().str.lower()
+                    # Limpiamos la columna de la base de datos para comparar igual a igual
+                    df_o_read['Productor_Match'] = df_o_read['Productor'].astype(str).str.strip().str.lower()
             
-            # Filtramos las notas usando los nombres ya limpios
-            mis_notas = df_o_read[df_o_read['Productor_Match'] == usuario_clean]
+                    # Filtramos las notas usando los nombres ya limpios
+                    mis_notas = df_o_read[df_o_read['Productor_Match'] == usuario_clean]
                     
                     if not mis_notas.empty:
                         for _, o in mis_notas.iterrows():
