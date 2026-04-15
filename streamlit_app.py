@@ -133,49 +133,67 @@ else:
 
         # B. DASHBOARD DE ANÁLISIS
         try:
-            df_fincas = conn.read(worksheet="Fincas")
-            mis_fincas = df_fincas[df_fincas['Productor'] == st.session_state.nombre_usuario]
+            # Forzamos la lectura sin caché para ver cambios inmediatos
+            df_fincas = conn.read(worksheet="Fincas", ttl=0)
+            
+            # Convertimos a string y quitamos espacios para que el filtro no falle
+            df_fincas['Productor'] = df_fincas['Productor'].astype(str).str.strip()
+            usuario_actual = str(st.session_state.nombre_usuario).strip()
+            
+            # FILTRO: Buscamos las fincas del usuario
+            mis_fincas = df_fincas[df_fincas['Productor'] == usuario_actual]
 
             if not mis_fincas.empty:
                 st.markdown("---")
                 st.subheader("📊 Análisis y Diagnóstico")
+                
+                # Selector de finca
                 finca_sel = st.selectbox("Selecciona tu finca", mis_fincas['Finca'].unique())
                 f = mis_fincas[mis_fincas['Finca'] == finca_sel].iloc[0]
 
-                # Cálculos
-                costo_total = f['Inversion'] + (f['Costo_Mensual'] * f['Meses'])
-                costo_kg = costo_total / f['Produccion']
-                precio_mercado = precios_corabastos.get(f['Cultivo'], 3000)
-                ganancia = (f['Precio_Venta'] - costo_kg) * f['Produccion']
-                brecha = precio_mercado - f['Precio_Venta']
+                # Cálculos matemáticos
+                # Aseguramos que los valores sean números para evitar errores
+                inv = float(f['Inversion'])
+                c_mes = float(f['Costo_Mensual'])
+                t_meses = float(f['Meses'])
+                prod = float(f['Produccion'])
+                p_venta = float(f['Precio_Venta'])
 
-                # Visualización
+                costo_total = inv + (c_mes * t_meses)
+                costo_kg = costo_total / prod if prod > 0 else 0
+                precio_mercado = precios_corabastos.get(f['Cultivo'], 3000)
+                ganancia = (p_venta - costo_kg) * prod
+                brecha = precio_mercado - p_venta
+
+                # --- VISUALIZACIÓN DE MÉTRICAS ---
                 m1, m2, m3, m4 = st.columns(4)
                 m1.metric("Costo/Kg", f"${costo_kg:,.0f}")
-                m2.metric("Producción", f"{f['Produccion']:,} Kg", f"{f['Produccion']/50:.1f} bultos")
-                m3.metric("Eficiencia", f"{(precio_mercado/costo_kg*100):.1f}%" if costo_kg >0 else "0%")
+                m2.metric("Producción", f"{prod:,.0f} Kg", f"{prod/50:.1f} bultos")
+                
+                # Eficiencia lógica
+                eficiencia_val = (precio_mercado / costo_kg * 100) if costo_kg > 0 else 0
+                m3.metric("Eficiencia", f"{eficiencia_val:.1f}%")
                 m4.metric("Ganancia Est.", f"${ganancia:,.0f}", delta=ganancia)
 
                 st.subheader("⚖️ Comparativa Corabastos")
                 c_a, c_b, c_c = st.columns(3)
                 c_a.metric(f"Precio Corabastos", f"${precio_mercado:,.0f}")
-                c_b.metric("Tu Precio", f"${f['Precio_Venta']:,.0f}")
+                c_b.metric("Tu Precio", f"${p_venta:,.0f}")
+                
+                # La brecha es mejor si es pequeña o negativa (estás vendiendo caro)
                 c_c.metric("Brecha", f"${brecha:,.0f}", delta=-brecha)
 
-                # Recomendación
+                # --- RECOMENDACIÓN ---
+                st.subheader("💡 Recomendación de Consultoría")
                 if ganancia < 0:
-                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA. Plan de Acción: Reducir costos urgentemente.")
+                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
+                    st.warning(f"Análisis: Tus costos por Kg (${costo_kg:,.0f}) superan tu precio de venta (${p_venta:,.0f}).")
                 else:
-                    st.success(f"✅ ¡Buen margen! Plan de Acción: Mantener calidad y buscar venta directa.")
+                    st.success(f"✅ ¡Tu finca es rentable! Tienes un margen de ${(p_venta - costo_kg):,.0f} por kilo.")
+
             else:
-                st.info("Aún no has registrado datos de finca. Usa el formulario de arriba.")
-        except:
-            st.info("Registra tu primera finca para ver el análisis.")
-
-    elif st.session_state.usuario_tipo == "Negocio":
-        st.title("🏪 Panel de Negocios")
-        st.write("Próximamente: Catálogo de productos directo del campo.")
-
-    elif st.session_state.usuario_tipo == "Transportador":
-        st.title("🚛 Panel Logístico")
-        st.write("Próximamente: Rutas disponibles para recolección.")
+                st.info(f"Aún no hay fincas registradas para {usuario_actual}. ¡Usa el formulario de arriba!")
+                
+        except Exception as e:
+            st.error("Error al cargar el análisis. Verifica que los datos en el Excel sean números.")
+            # st.exception(e) # Descomenta esto si quieres ver el error técnico
