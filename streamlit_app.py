@@ -213,9 +213,9 @@ else:
                 except:
                     st.write("Aún no hay ofertas registradas en el sistema.")
                     
-        except Exception as e:
-            st.error("Error al cargar el análisis. Verifica que los datos en el Excel sean números.")
-            # st.exception(e) # Descomenta esto si quieres ver el error técnico
+            except Exception as e:
+                st.error("Error al cargar el análisis. Verifica que los datos en el Excel sean números.")
+                # st.exception(e) # Descomenta esto si quieres ver el error técnico
 
         # C. TABLA DE REGISTROS HISTÓRICOS
         st.markdown("---")
