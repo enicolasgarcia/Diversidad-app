@@ -193,7 +193,26 @@ else:
 
             else:
                 st.info(f"Aún no hay fincas registradas para {usuario_actual}. ¡Usa el formulario de arriba!")
-                
+
+        # --- NUEVO: BUZÓN DE NOTIFICACIONES ---
+                st.markdown("---")
+                st.subheader("🔔 Notificaciones de Interés")
+                try:
+                    # Leemos la nueva pestaña de Ofertas
+                    df_o_read = conn.read(worksheet="Ofertas", ttl=0)
+                    usuario_actual = str(st.session_state.nombre_usuario).strip()
+                    
+                    # Filtramos para que Robinson solo vea lo que es para él
+                    mis_notas = df_o_read[df_o_read['Productor'].astype(str).str.strip() == usuario_actual]
+                    
+                    if not mis_notas.empty:
+                        for _, o in mis_notas.iterrows():
+                            st.info(f"📩 **{o['Interesado']}** está interesado en tu **{o['Producto']}** (Finca: {o['Finca']})")
+                    else:
+                        st.write("No tienes ofertas nuevas por ahora.")
+                except:
+                    st.write("Aún no hay ofertas registradas en el sistema.")
+                    
         except Exception as e:
             st.error("Error al cargar el análisis. Verifica que los datos en el Excel sean números.")
             # st.exception(e) # Descomenta esto si quieres ver el error técnico
@@ -241,12 +260,30 @@ else:
                             st.write(f"**Precio:** ${float(row['Precio_Venta']):,.0f} / Kg")
                         with c3:
                             if st.button(f"Ofertar", key=f"btn_{index}"):
-                                st.success(f"¡Interés enviado a {row['Productor']}!")
-                        st.divider()
+                                # 1. Preparamos el registro de la oferta
+                                nueva_o = pd.DataFrame([{
+                                    "Productor": row['Productor'],
+                                    "Interesado": st.session_state.nombre_usuario,
+                                    "Producto": row['Cultivo'],
+                                    "Finca": row['Finca'],
+                                    "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
+                                }])
+                                
+                                # 2. Lo guardamos en la pestaña "Ofertas"
+                                try:
+                                    df_o = conn.read(worksheet="Ofertas", ttl=0)
+                                    df_o_final = pd.concat([df_o, nueva_o], ignore_index=True)
+                                    conn.update(worksheet="Ofertas", data=df_o_final)
+                                except:
+                                    conn.update(worksheet="Ofertas", data=nueva_o)
+                                
+                                st.success(f"¡Oferta enviada a {row['Productor']}!")
+                        
+                        st.divider() 
             else:
-                st.info("Aún no hay productos disponibles en el mercado.")
+                st.info("No hay productos en el mercado.")
         except:
-            st.error("Error al cargar el mercado.")
+            st.error("Error al cargar el marketplace.") 
 
     # ==========================================
     # 3. PERFIL TRANSPORTADOR
