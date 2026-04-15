@@ -164,6 +164,25 @@ else:
                 m3.metric("Eficiencia", f"{(precio_m/costo_kg*100 if costo_kg>0 else 0):.1f}%")
                 m4.metric("Ganancia Est.", f"${ganancia:,.0f}", delta=ganancia)
 
+                # --- 1. CÁLCULO DE BRECHA (Importante añadirlo) ---
+                brecha = precio_m - p_venta
+
+                # --- 2. RECOMENDACIÓN DE CONSULTORÍA ---
+                st.markdown("---")
+                st.subheader("💡 Recomendación de Consultoría")
+                if ganancia < 0:
+                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
+                    st.warning(f"Análisis: Tus costos por Kg (${costo_kg:,.0f}) superan tu precio de venta (${p_venta:,.0f}).")
+                else:
+                    st.success(f"✅ ¡Tu finca es rentable! Tienes un margen de ${(p_venta - costo_kg):,.0f} por kilo.")
+
+                # --- 3. COMPARATIVA CORABASTOS ---
+                st.subheader("⚖️ Comparativa Corabastos")
+                c_a, c_b, c_c = st.columns(3)
+                c_a.metric(f"Precio Corabastos", f"${precio_m:,.0f}")
+                c_b.metric("Tu Precio", f"${p_venta:,.0f}")
+                c_c.metric("Brecha", f"${brecha:,.0f}", delta=-brecha)
+                
                 # D. TABLA HISTÓRICA
                 st.markdown("---")
                 st.subheader("📋 Tu Historial de Cultivos")
