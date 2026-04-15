@@ -87,6 +87,7 @@ else:
         
         # A. FORMULARIO DE FINCA
         with st.expander("📝 Registrar Datos de mi Finca / Cultivo", expanded=False):
+            # Le ponemos un nombre claro al formulario: "form_finca"
             with st.form("form_finca"):
                 c1, c2 = st.columns(2)
                 with c1:
@@ -100,22 +101,35 @@ else:
                     ubicacion = st.text_input("Departamento/Municipio")
                     meses = st.number_input("Duración del cultivo (meses)", min_value=1)
                 
-                if st.form_submit_button("Guardar Datos"):
-                    nueva_finca = pd.DataFrame([{
-                        "Productor": st.session_state.nombre_usuario, "Finca": nom_finca,
-                        "Cultivo": cultivo, "Inversion": inv_ini, "Costo_Mensual": costo_mes,
-                        "Produccion": prod_est, "Unidad": "Kilos", "Ubicacion": ubicacion,
-                        "Meses": meses, "Precio_Venta": precio_v
-                    }])
-                    try:
-                        df_f = conn.read(worksheet="Fincas")
-                        df_f_final = pd.concat([df_f, nueva_finca], ignore_index=True)
-                        conn.update(worksheet="Fincas", data=df_f_final)
-                        st.success("¡Datos guardados!")
-                        st.rerun()
-                    except:
-                        conn.update(worksheet="Fincas", data=nueva_finca)
-                        st.rerun()
+                # --- ESTE BOTÓN DEBE ESTAR ADENTRO DEL "WITH ST.FORM" ---
+                submit_finca = st.form_submit_button("Guardar Datos")
+
+                if submit_finca:
+                    if nom_finca and ubicacion: # Validación mínima
+                        nueva_finca = pd.DataFrame([{
+                            "Productor": st.session_state.nombre_usuario, 
+                            "Finca": nom_finca,
+                            "Cultivo": cultivo, 
+                            "Inversion": inv_ini, 
+                            "Costo_Mensual": costo_mes,
+                            "Produccion": prod_est, 
+                            "Unidad": "Kilos", 
+                            "Ubicacion": ubicacion,
+                            "Meses": meses, 
+                            "Precio_Venta": precio_v
+                        }])
+                        try:
+                            df_f = conn.read(worksheet="Fincas")
+                            df_f_final = pd.concat([df_f, nueva_finca], ignore_index=True)
+                            conn.update(worksheet="Fincas", data=df_f_final)
+                            st.success("¡Datos guardados!")
+                            st.rerun()
+                        except:
+                            conn.update(worksheet="Fincas", data=nueva_finca)
+                            st.success("¡Primera finca registrada!")
+                            st.rerun()
+                    else:
+                        st.warning("Completa el nombre y ubicación")
 
         # B. DASHBOARD DE ANÁLISIS
         try:
