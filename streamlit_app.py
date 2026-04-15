@@ -197,3 +197,61 @@ else:
         except Exception as e:
             st.error("Error al cargar el análisis. Verifica que los datos en el Excel sean números.")
             # st.exception(e) # Descomenta esto si quieres ver el error técnico
+
+        # C. TABLA DE REGISTROS HISTÓRICOS
+        st.markdown("---")
+        st.subheader("📋 Tu Historial de Cultivos")
+        st.dataframe(mis_fincas, use_container_width=True)
+        
+        # D. ZONA DE BORRADO
+        with st.expander("🗑️ Zona de Corrección (Borrar Registros)"):
+            finca_a_borrar = st.selectbox("Selecciona la finca a eliminar", mis_fincas['Finca'].unique(), key="del_finca")
+            if st.button("Eliminar Registro Permanentemente"):
+                try:
+                    # Filtramos el dataframe eliminando la fila seleccionada
+                    df_actualizado = df_fincas[~((df_fincas['Productor'] == usuario_actual) & (df_fincas['Finca'] == finca_a_borrar))]
+                    conn.update(worksheet="Fincas", data=df_actualizado)
+                    st.warning(f"Registro de {finca_a_borrar} eliminado.")
+                    st.rerun()
+                except:
+                    st.error("No se pudo eliminar el registro.")
+
+    # ==========================================
+    # 2. PERFIL NEGOCIO
+    # ==========================================
+    elif st.session_state.usuario_tipo == "Negocio":
+        st.title("🏪 Marketplace: Abastecimiento Directo")
+        st.write("Explora los productos disponibles directamente de las fincas.")
+
+        try:
+            df_market = conn.read(worksheet="Fincas", ttl=0)
+            if not df_market.empty:
+                filtro_cultivo = st.multiselect("Filtrar por producto", df_market['Cultivo'].unique())
+                df_display = df_market[df_market['Cultivo'].isin(filtro_cultivo)] if filtro_cultivo else df_market
+
+                st.markdown("### 🛒 Productos Disponibles")
+                for index, row in df_display.iterrows():
+                    with st.container():
+                        c1, c2, c3 = st.columns([2, 2, 1])
+                        with c1:
+                            st.markdown(f"#### {row['Cultivo']} - Finca {row['Finca']}")
+                            st.caption(f"📍 Ubicación: {row['Ubicacion']}")
+                        with c2:
+                            st.write(f"**Cantidad:** {row['Produccion']} Kg")
+                            st.write(f"**Precio:** ${float(row['Precio_Venta']):,.0f} / Kg")
+                        with c3:
+                            if st.button(f"Ofertar", key=f"btn_{index}"):
+                                st.success(f"¡Interés enviado a {row['Productor']}!")
+                        st.divider()
+            else:
+                st.info("Aún no hay productos disponibles en el mercado.")
+        except:
+            st.error("Error al cargar el mercado.")
+
+    # ==========================================
+    # 3. PERFIL TRANSPORTADOR
+    # ==========================================
+    elif st.session_state.usuario_tipo == "Transportador":
+        st.title("🚛 Panel Logístico")
+        st.write("Gestiona las rutas de recolección disponibles.")
+        st.info("Próximamente: Mapa de rutas y asignación de fletes.")
