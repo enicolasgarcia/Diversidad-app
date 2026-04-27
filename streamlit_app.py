@@ -165,10 +165,10 @@ else:
                             conn.update(worksheet="Ofertas", data=df_o_read)
                             st.success("¡Venta registrada!")
                             st.rerun() # Esto refresca la página y quita la notificación
-           else:
-               st.write("No tienes ofertas pendientes por ahora.")
-       except Exception as e:
-           st.error(f"Error: {e}")
+        else:
+            st.write("No tienes ofertas pendientes por ahora.")
+    except Exception as e:
+        st.error(f"Error: {e}")
 
         # --- C. DASHBOARD DE ANÁLISIS ---
         try:
