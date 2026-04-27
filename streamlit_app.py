@@ -122,10 +122,10 @@ else:
                         st.rerun()
 
         # --- B. BUZÓN DE NOTIFICACIONES ---
-st.markdown("---")
-st.subheader("🔔 Notificaciones de Interés")
-try:
-    # 1. Leemos las dos pestañas necesarias
+        st.markdown("---")
+        st.subheader("🔔 Notificaciones de Interés")
+        try:
+           # 1. Leemos las dos pestañas necesarias
     df_o_read = conn.read(worksheet="Ofertas", ttl=0)
     df_u_read = conn.read(worksheet="Usuarios", ttl=0) # Leemos usuarios para sacar el teléfono
 
