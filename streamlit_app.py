@@ -3,7 +3,7 @@ from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 
 # --- CONFIGURACIÓN DE PANTALLA ---
-st.set_page_config(page_title="Agrocadena 🌱", layout="wide") # Cambiado a wide para mejor visualización
+st.set_page_config(page_title="DIVERSIDAD 🌱", layout="wide") # Cambiado a wide para mejor visualización
 
 # --- CONEXIÓN A GOOGLE SHEETS ---
 conn = st.connection("gsheets", type=GSheetsConnection)
@@ -24,7 +24,7 @@ precios_corabastos = {
 
 # --- 1. PANTALLA DE INICIO (Login/Registro) ---
 if not st.session_state.logeado:
-    st.title("🌱 Agrocadena")
+    st.title("🌱 DIVERSIDAD")
     st.markdown("### Conectando el campo con la ciudad")
     
     tab1, tab2 = st.tabs(["Iniciar Sesión", "Registrarse"])
