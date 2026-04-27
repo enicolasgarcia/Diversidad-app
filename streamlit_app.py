@@ -126,8 +126,8 @@ else:
         st.subheader("🔔 Notificaciones de Interés")
         try:
            # 1. Leemos las dos pestañas necesarias
-        df_o_read = conn.read(worksheet="Ofertas", ttl=0)
-        df_u_read = conn.read(worksheet="Usuarios", ttl=0) # Leemos usuarios para sacar el teléfono
+         df_o_read = conn.read(worksheet="Ofertas", ttl=0)
+         df_u_read = conn.read(worksheet="Usuarios", ttl=0) # Leemos usuarios para sacar el teléfono
 
         u_clean = str(st.session_state.nombre_usuario).strip().lower()
         df_o_read['Match'] = df_o_read['Productor'].astype(str).str.strip().str.lower()
