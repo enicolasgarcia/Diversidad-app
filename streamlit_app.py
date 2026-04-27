@@ -125,50 +125,49 @@ else:
         st.markdown("---")
         st.subheader("🔔 Notificaciones de Interés")
         try:
+            # 1. Lectura de datos
             df_o_read = conn.read(worksheet="Ofertas", ttl=0)
             df_u_read = conn.read(worksheet="Usuarios", ttl=0)
-    
+            
             u_clean = str(st.session_state.nombre_usuario).strip().lower()
-    
-            # FILTRO IMPORTANTE: Solo mostramos donde el Productor coincide Y el Estado NO es 'Vendido'
-            # Usamos fillna('') por si la celda de Estado está vacía
-            df_o_read['Estado'] = df_o_read['Estado'].fillna('')
+            df_o_read['Estado'] = df_o_read['Estado'].fillna('Pendiente')
+            
+            # 2. Filtrado de notas pendientes
             mis_notas = df_o_read[
                 (df_o_read['Productor'].astype(str).str.strip().str.lower() == u_clean) & 
                 (df_o_read['Estado'] != 'Vendido')
             ]
-    
+            
+            # 3. Mostrar notificaciones o mensaje de vacío
             if not mis_notas.empty:
                 for i, o in mis_notas.iterrows():
                     interesado_nombre = str(o['Interesado']).strip()
                     user_data = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == interesado_nombre]
-            
-                    # Tres columnas: Info, WhatsApp y Acción de Venta
+                    
                     col_info, col_whatsapp, col_accion = st.columns([2, 1, 1])
-            
+                    
                     with col_info:
                         st.info(f"📩 **{o['Interesado']}** quiere tu **{o['Producto']}**")
-            
+                    
                     with col_whatsapp:
                         if not user_data.empty:
                             tel = "".join(filter(str.isdigit, str(user_data.iloc[0]['Telefono'])))
                             if not tel.startswith("57"): tel = "57" + tel
                             msg = f"https://wa.me/{tel}?text=Hola%20vi%20tu%20interes%20en%20mi%20{o['Producto']}"
                             st.link_button("💬 Hablar", msg)
-            
+                    
                     with col_accion:
-                        # Botón para marcar como vendido
                         if st.button("✅ Vendido", key=f"btn_{i}"):
-                            # Actualizamos el DataFrame en la memoria
                             df_o_read.at[i, 'Estado'] = 'Vendido'
-                            # Subimos el cambio a Google Sheets
                             conn.update(worksheet="Ofertas", data=df_o_read)
                             st.success("¡Venta registrada!")
-                            st.rerun() # Esto refresca la página y quita la notificación
-        else:
-            st.write("No tienes ofertas pendientes por ahora.")
-    except Exception as e:
-        st.error(f"Error: {e}")
+                            st.rerun()
+            else:
+                st.write("No tienes ofertas pendientes por ahora.")
+
+        except Exception as e:
+            # Este EXCEPT ahora sí cierra correctamente el TRY de arriba
+            st.error(f"Error al cargar el buzón: {e}")
 
         # --- C. DASHBOARD DE ANÁLISIS ---
         try:
