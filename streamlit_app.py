@@ -165,8 +165,8 @@ else:
                          st.write("⚠️ Sin Tel")
          else:
              st.write("No tienes ofertas nuevas por ahora.")
-     except Exception as e:
-         st.write(f"Error al cargar ofertas: {e}")
+        except Exception as e:
+            st.write(f"Error al cargar ofertas: {e}")
 
         # --- C. DASHBOARD DE ANÁLISIS ---
         try:
