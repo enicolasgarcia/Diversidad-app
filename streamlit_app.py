@@ -121,22 +121,52 @@ else:
                         st.success("¡Datos guardados!")
                         st.rerun()
 
-        # --- B. BUZÓN DE NOTIFICACIONES (Puesto aquí para que sea lo primero que vea) ---
-        st.markdown("---")
-        st.subheader("🔔 Notificaciones de Interés")
-        try:
-            df_o_read = conn.read(worksheet="Ofertas", ttl=0)
-            u_clean = str(st.session_state.nombre_usuario).strip().lower()
-            df_o_read['Match'] = df_o_read['Productor'].astype(str).str.strip().str.lower()
-            mis_notas = df_o_read[df_o_read['Match'] == u_clean]
+        # --- B. BUZÓN DE NOTIFICACIONES ---
+st.markdown("---")
+st.subheader("🔔 Notificaciones de Interés")
+try:
+    # 1. Leemos las dos pestañas necesarias
+    df_o_read = conn.read(worksheet="Ofertas", ttl=0)
+    df_u_read = conn.read(worksheet="Usuarios", ttl=0) # Leemos usuarios para sacar el teléfono
+
+    u_clean = str(st.session_state.nombre_usuario).strip().lower()
+    df_o_read['Match'] = df_o_read['Productor'].astype(str).str.strip().str.lower()
+    mis_notas = df_o_read[df_o_read['Match'] == u_clean]
+    
+    if not mis_notas.empty:
+        for _, o in mis_notas.iterrows():
+            # 2. Buscamos el teléfono del interesado en la lista de usuarios
+            interesado_nombre = str(o['Interesado']).strip()
+            # Buscamos la fila donde el nombre coincida
+            user_data = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == interesado_nombre]
             
-            if not mis_notas.empty:
-                for _, o in mis_notas.iterrows():
-                    st.info(f"📩 **{o['Interesado']}** quiere tu **{o['Producto']}** (Finca: {o['Finca']})")
-            else:
-                st.write("No tienes ofertas nuevas por ahora.")
-        except:
-            st.write("Aún no hay ofertas registradas.")
+            # Creamos una columna para mostrar la info
+            col_info, col_boton = st.columns([3, 1])
+            
+            with col_info:
+                st.info(f"📩 **{o['Interesado']}** quiere tu **{o['Producto']}** (Finca: {o['Finca']})")
+            
+            with col_boton:
+                if not user_data.empty:
+                    # Sacamos el teléfono y lo limpiamos
+                    tel = str(user_data.iloc[0]['Telefono'])
+                    # Quitamos cualquier punto o espacio y nos aseguramos que empiece por 57
+                    tel_clean = "".join(filter(str.isdigit, tel))
+                    if not tel_clean.startswith("57"):
+                        tel_clean = "57" + tel_clean
+                    
+                    # Mensaje personalizado
+                    mensaje = f"Hola {interesado_nombre}, soy productor en DIVERSIDAD 🦁. Vi tu interés en mi {o['Producto']}. ¿Hablamos?"
+                    msg_url = mensaje.replace(" ", "%20")
+                    
+                    # Botón de WhatsApp
+                    st.link_button("💬 Hablar", f"https://wa.me/{tel_clean}?text={msg_url}")
+                else:
+                    st.write("⚠️ Sin Tel")
+    else:
+        st.write("No tienes ofertas nuevas por ahora.")
+except Exception as e:
+    st.write(f"Error al cargar ofertas: {e}")
 
         # --- C. DASHBOARD DE ANÁLISIS ---
         try:
