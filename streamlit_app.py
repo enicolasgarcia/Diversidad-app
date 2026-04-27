@@ -135,38 +135,38 @@ else:
     
          if not mis_notas.empty:
              for _, o in mis_notas.iterrows():
-             # 2. Buscamos el teléfono del interesado en la lista de usuarios
-             interesado_nombre = str(o['Interesado']).strip()
-             # Buscamos la fila donde el nombre coincida
-             user_data = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == interesado_nombre]
+                 # 2. Buscamos el teléfono del interesado en la lista de usuarios
+                 interesado_nombre = str(o['Interesado']).strip()
+                 # Buscamos la fila donde el nombre coincida
+                 user_data = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == interesado_nombre]
             
-             # Creamos una columna para mostrar la info
-             col_info, col_boton = st.columns([3, 1])
+                 # Creamos una columna para mostrar la info
+                 col_info, col_boton = st.columns([3, 1])
             
-             with col_info:
-                 st.info(f"📩 **{o['Interesado']}** quiere tu **{o['Producto']}** (Finca: {o['Finca']})")
+                 with col_info:
+                     st.info(f"📩 **{o['Interesado']}** quiere tu **{o['Producto']}** (Finca: {o['Finca']})")
             
-             with col_boton:
-                 if not user_data.empty:
-                     # Sacamos el teléfono y lo limpiamos
-                     tel = str(user_data.iloc[0]['Telefono'])
-                     # Quitamos cualquier punto o espacio y nos aseguramos que empiece por 57
-                     tel_clean = "".join(filter(str.isdigit, tel))
-                     if not tel_clean.startswith("57"):
-                         tel_clean = "57" + tel_clean
+                 with col_boton:
+                     if not user_data.empty:
+                         # Sacamos el teléfono y lo limpiamos
+                         tel = str(user_data.iloc[0]['Telefono'])
+                         # Quitamos cualquier punto o espacio y nos aseguramos que empiece por 57
+                         tel_clean = "".join(filter(str.isdigit, tel))
+                         if not tel_clean.startswith("57"):
+                             tel_clean = "57" + tel_clean
                     
-                     # Mensaje personalizado
-                     mensaje = f"Hola {interesado_nombre}, soy productor en DIVERSIDAD 🦁. Vi tu interés en mi {o['Producto']}. ¿Hablamos?"
-                     msg_url = mensaje.replace(" ", "%20")
+                         # Mensaje personalizado
+                         mensaje = f"Hola {interesado_nombre}, soy productor en DIVERSIDAD 🦁. Vi tu interés en mi {o['Producto']}. ¿Hablamos?"
+                         msg_url = mensaje.replace(" ", "%20")
                     
-                     # Botón de WhatsApp
-                     st.link_button("💬 Hablar", f"https://wa.me/{tel_clean}?text={msg_url}")
-                 else:
-                     st.write("⚠️ Sin Tel")
-    else:
-        st.write("No tienes ofertas nuevas por ahora.")
-except Exception as e:
-    st.write(f"Error al cargar ofertas: {e}")
+                         # Botón de WhatsApp
+                         st.link_button("💬 Hablar", f"https://wa.me/{tel_clean}?text={msg_url}")
+                     else:
+                         st.write("⚠️ Sin Tel")
+         else:
+             st.write("No tienes ofertas nuevas por ahora.")
+     except Exception as e:
+         st.write(f"Error al cargar ofertas: {e}")
 
         # --- C. DASHBOARD DE ANÁLISIS ---
         try:
