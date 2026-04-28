@@ -238,7 +238,10 @@ else:
         st.write("Explora los productos disponibles directamente de las fincas.")
 
         try:
+            # Leemos Fincas para el mercado y Usuarios para los teléfonos
             df_market = conn.read(worksheet="Fincas", ttl=0)
+            df_u_read = conn.read(worksheet="Usuarios", ttl=0) 
+
             if not df_market.empty:
                 filtro_cultivo = st.multiselect("Filtrar por producto", df_market['Cultivo'].unique())
                 df_display = df_market[df_market['Cultivo'].isin(filtro_cultivo)] if filtro_cultivo else df_market
@@ -255,16 +258,17 @@ else:
                             st.write(f"**Precio:** ${float(row['Precio_Venta']):,.0f} / Kg")
                         with c3:
                             if st.button(f"Ofertar", key=f"btn_{index}"):
-                                # 1. Preparamos el registro de la oferta
+                                # 1. Preparamos el registro con estado 'Pendiente'
                                 nueva_o = pd.DataFrame([{
                                     "Productor": row['Productor'],
                                     "Interesado": st.session_state.nombre_usuario,
                                     "Producto": row['Cultivo'],
                                     "Finca": row['Finca'],
-                                    "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
+                                    "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                                    "Estado": "Pendiente" # <-- Esto automatiza tu Excel
                                 }])
                                 
-                                # 2. Lo guardamos en la pestaña "Ofertas"
+                                # 2. Guardado en Google Sheets
                                 try:
                                     df_o = conn.read(worksheet="Ofertas", ttl=0)
                                     df_o_final = pd.concat([df_o, nueva_o], ignore_index=True)
@@ -273,12 +277,23 @@ else:
                                     conn.update(worksheet="Ofertas", data=nueva_o)
                                 
                                 st.success(f"¡Oferta enviada a {row['Productor']}!")
+
+                                # --- BOTÓN DE WHATSAPP PARA EL NEGOCIO ---
+                                user_prod = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == str(row['Productor']).strip()]
+                                if not user_prod.empty:
+                                    tel_p = "".join(filter(str.isdigit, str(user_prod.iloc[0]['Telefono'])))
+                                    if not tel_p.startswith("57"): tel_p = "57" + tel_p
+                                    
+                                    mensaje_n = f"Hola {row['Productor']}, soy de {st.session_state.nombre_usuario}. Acabo de enviarte una oferta por tu {row['Cultivo']} en DIVERSIDAD 🦁."
+                                    url_n = f"https://wa.me/{tel_p}?text={mensaje_n.replace(' ', '%20')}"
+                                    
+                                    st.link_button(f"💬 Hablar con el Productor", url_n)
                         
                         st.divider() 
             else:
                 st.info("No hay productos en el mercado.")
-        except:
-            st.error("Error al cargar el marketplace.") 
+        except Exception as e:
+            st.error(f"Error al cargar el marketplace: {e}") 
 
     # ==========================================
     # 3. PERFIL TRANSPORTADOR
