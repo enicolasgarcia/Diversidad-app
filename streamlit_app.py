@@ -286,4 +286,40 @@ else:
     elif st.session_state.usuario_tipo == "Transportador":
         st.title("🚛 Panel Logístico")
         st.write("Gestiona las rutas de recolección disponibles.")
-        st.info("Próximamente: Mapa de rutas y asignación de fletes.")
+        
+        try:
+            # 1. Conexión y lectura de las ofertas
+            df_o_log = conn.read(worksheet="Ofertas", ttl=0)
+            
+            # 2. Filtramos: Solo lo que ya está "Vendido" (necesita transporte)
+            # Aseguramos que no haya errores con valores vacíos
+            df_o_log['Estado'] = df_o_log['Estado'].fillna('Pendiente')
+            rutas_disponibles = df_o_log[df_o_log['Estado'] == 'Vendido']
+            
+            if not rutas_disponibles.empty:
+                st.success(f"¡Hay {len(rutas_disponibles)} rutas listas para recolección!")
+                
+                for i, r in rutas_disponibles.iterrows():
+                    with st.container():
+                        # Creamos un diseño limpio para la ruta
+                        col_text, col_btn = st.columns([3, 1])
+                        
+                        with col_text:
+                            st.markdown(f"""
+                            ### 📦 {r['Producto']}
+                            * **Origen:** Finca {r['Finca']} ({r['Productor']})
+                            * **Destino:** {r['Interesado']}
+                            """)
+                        
+                        with col_btn:
+                            st.write("") # Espacio para alinear
+                            if st.button("🚛 Aceptar Ruta", key=f"ruta_{i}"):
+                                st.balloons()
+                                st.success("¡Ruta asignada a tu camión!")
+                                # Aquí podrías cambiar el estado a "En camino" si quisieras
+            else:
+                st.info("No hay rutas vendidas esperando transporte por ahora.")
+                st.write("Vuelve más tarde cuando los productores cierren nuevos tratos.")
+                
+        except Exception as e:
+            st.error(f"Hubo un problema al cargar las rutas: {e}")
