@@ -288,11 +288,11 @@ else:
         st.write("Gestiona las rutas de recolección disponibles.")
         
         try:
-            # 1. Conexión y lectura de las ofertas
+            # 1. Leemos Ofertas y Usuarios
             df_o_log = conn.read(worksheet="Ofertas", ttl=0)
+            df_u_log = conn.read(worksheet="Usuarios", ttl=0)
             
-            # 2. Filtramos: Solo lo que ya está "Vendido" (necesita transporte)
-            # Aseguramos que no haya errores con valores vacíos
+            # 2. Filtramos: Solo lo que está "Vendido"
             df_o_log['Estado'] = df_o_log['Estado'].fillna('Pendiente')
             rutas_disponibles = df_o_log[df_o_log['Estado'] == 'Vendido']
             
@@ -301,8 +301,7 @@ else:
                 
                 for i, r in rutas_disponibles.iterrows():
                     with st.container():
-                        # Creamos un diseño limpio para la ruta
-                        col_text, col_btn = st.columns([3, 1])
+                        col_text, col_btns = st.columns([2, 1])
                         
                         with col_text:
                             st.markdown(f"""
@@ -311,15 +310,28 @@ else:
                             * **Destino:** {r['Interesado']}
                             """)
                         
-                        with col_btn:
-                            st.write("") # Espacio para alinear
-                            if st.button("🚛 Aceptar Ruta", key=f"ruta_{i}"):
+                        with col_btns:
+                            # --- OPCIÓN 1: Contacto Directo ---
+                            # Buscamos el teléfono del productor
+                            prod_info = df_u_log[df_u_log['Nombre'].astype(str).str.strip() == str(r['Productor']).strip()]
+                            
+                            if not prod_info.empty:
+                                tel = "".join(filter(str.isdigit, str(prod_info.iloc[0]['Telefono'])))
+                                if not tel.startswith("57"): tel = "57" + tel
+                                
+                                mensaje_t = f"Hola {r['Productor']}, soy el transportador de DIVERSIDAD 🦁. Voy en camino por tu cosecha de {r['Producto']}."
+                                url_t = f"https://wa.me/{tel}?text={mensaje_t.replace(' ', '%20')}"
+                                st.link_button("📞 Coordinar Recogida", url_t)
+                            
+                            # --- OPCIÓN 2: Cambiar Estado a "En Camino" ---
+                            if st.button("🚚 Aceptar y Recoger", key=f"ship_{i}"):
+                                df_o_log.at[i, 'Estado'] = 'En Camino'
+                                conn.update(worksheet="Ofertas", data=df_o_log)
                                 st.balloons()
-                                st.success("¡Ruta asignada a tu camión!")
-                                # Aquí podrías cambiar el estado a "En camino" si quisieras
+                                st.success("Estado actualizado: ¡Producto en camino!")
+                                st.rerun()
             else:
-                st.info("No hay rutas vendidas esperando transporte por ahora.")
-                st.write("Vuelve más tarde cuando los productores cierren nuevos tratos.")
+                st.info("No hay rutas vendidas esperando transporte.")
                 
         except Exception as e:
-            st.error(f"Hubo un problema al cargar las rutas: {e}")
+            st.error(f"Error en logística: {e}")
