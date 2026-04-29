@@ -128,6 +128,7 @@ else:
             # 1. Lectura de datos
             df_o_read = conn.read(worksheet="Ofertas", ttl=0)
             df_u_read = conn.read(worksheet="Usuarios", ttl=0)
+            df_f_read = conn.read(worksheet="Fincas", ttl=0) # <--- Nueva lectura
             
             u_clean = str(st.session_state.nombre_usuario).strip().lower()
             df_o_read['Estado'] = df_o_read['Estado'].fillna('Pendiente')
@@ -141,19 +142,35 @@ else:
             # 3. Mostrar notificaciones o mensaje de vacío
             if not mis_notas.empty:
                 for i, o in mis_notas.iterrows():
+                    # --- NUEVA LÓGICA DE UNIDADES ---
+                    # Buscamos en Fincas el producto de este productor para sacar la cantidad
+                    detalle = df_f_read[
+                        (df_f_read['Productor'].astype(str).str.strip().str.lower() == u_clean) & 
+                        (df_f_read['Cultivo'].astype(str).str.strip() == str(o['Producto']).strip())
+                    ]
+                    
+                    cantidad_texto = ""
+                    if not detalle.empty:
+                        # Asumiendo que en Fincas la cantidad está en 'Produccion'
+                        # Si tienes una columna de unidad (Kg, Bultos), la puedes sumar aquí
+                        cantidad_texto = f"{detalle.iloc[0]['Produccion']} Kg" 
+                    # --------------------------------
+                    
                     interesado_nombre = str(o['Interesado']).strip()
                     user_data = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == interesado_nombre]
                     
                     col_info, col_whatsapp, col_accion = st.columns([2, 1, 1])
                     
                     with col_info:
-                        st.info(f"📩 **{o['Interesado']}** quiere tu **{o['Producto']}**")
+                        # Ahora el mensaje incluye la cantidad y unidad
+                        st.info(f"📩 **{o['Interesado']}** quiere tus **{cantidad_texto}** de **{o['Producto']}**")
                     
                     with col_whatsapp:
                         if not user_data.empty:
                             tel = "".join(filter(str.isdigit, str(user_data.iloc[0]['Telefono'])))
                             if not tel.startswith("57"): tel = "57" + tel
-                            msg = f"https://wa.me/{tel}?text=Hola%20vi%20tu%20interes%20en%20mi%20{o['Producto']}"
+                            # Mensaje de WhatsApp también actualizado
+                            msg = f"https://wa.me/{tel}?text=Hola%20vi%20tu%20interes%20en%20mis%20{cantidad_texto}%20de%20{o['Producto']}"
                             st.link_button("💬 Hablar", msg)
                     
                     with col_accion:
@@ -166,7 +183,6 @@ else:
                 st.write("No tienes ofertas pendientes por ahora.")
 
         except Exception as e:
-            # Este EXCEPT ahora sí cierra correctamente el TRY de arriba
             st.error(f"Error al cargar el buzón: {e}")
 
         # --- C. DASHBOARD DE ANÁLISIS ---
