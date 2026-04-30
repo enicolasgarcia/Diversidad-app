@@ -233,36 +233,26 @@ else:
                 st.subheader("💡 Recomendación de Consultoría")
 
                 try:
-                    # Buscamos la unidad de forma segura
-                    # Si 'row' existe, la tomamos de ahí. Si no, usamos "Kilos"
-                    if 'Unidad' in row:
-                        u_medida = row['Unidad']
-                    else:
-                        u_medida = "Kilos"
-
+                    # 1. Definimos la unidad con un valor por defecto si falla
+                    u_medida = str(row['Unidad']) if ('Unidad' in row and pd.notna(row['Unidad'])) else "unidades"
+            
+                    # 2. Preparamos los textos con espacios CLAROS
+                    # Usamos f-strings pero con espacios manuales antes y después de cada paréntesis
                     if ganancia < 0:
                         st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
-                        # Agregamos espacios antes y después de las variables ()
-                        st.warning(f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) superan a tu precio de venta (${p_venta:,.0f}).")
+                        texto_p = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) superan a tu precio de venta (${p_venta:,.0f})."
+                        st.warning(texto_p)
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
-                        # Usamos comas para que Streamlit fuerce el espacio entre cada parte
-                        st.info(
-                            "Análisis: Tus costos por", 
-                            u_medida, 
-                            f"(${costo_kg:,.0f})", 
-                            "comparados con tu precio", 
-                            f"(${p_venta:,.0f})."
-                        )
+                        texto_r = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f})."
+                        st.info(texto_r)
 
                 except Exception as e:
-                    # Aplicamos lo mismo en el except por seguridad
-                    st.info(
-                        "Análisis: Tus costos por unidad", 
-                        f"(${costo_kg:,.0f})", 
-                        "comparados con tu precio", 
-                        f"(${p_venta:,.0f})."
-                    )
+                    # Si el error es por la unidad, este bloque nos salvará y mostrará el análisis
+                    texto_error = f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f})."
+                    st.info(texto_error)
+                    # Imprime el error en la consola para que tú lo veas pero no bloquee la app
+                    print(f"Error en consultoría: {e}")
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
