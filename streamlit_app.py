@@ -233,26 +233,35 @@ else:
                 st.subheader("💡 Recomendación de Consultoría")
 
                 try:
-                    # 1. Definimos la unidad con un valor por defecto si falla
+                    # Definición segura de unidad
                     u_medida = str(row['Unidad']) if ('Unidad' in row and pd.notna(row['Unidad'])) else "unidades"
-            
-                    # 2. Preparamos los textos con espacios CLAROS
-                    # Usamos f-strings pero con espacios manuales antes y después de cada paréntesis
+                    
+                    # Formateamos los números antes para que el HTML sea limpio
+                    c_kg_f = f"${costo_kg:,.0f}"
+                    p_v_f = f"${p_venta:,.0f}"
+        
                     if ganancia < 0:
                         st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
-                        texto_p = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) superan a tu precio de venta (${p_venta:,.0f})."
-                        st.warning(texto_p)
+                        # Usamos &nbsp; que es un espacio forzado en HTML
+                        texto_html = f"""
+                        <div style="background-color: #ffcccc; padding: 10px; border-radius: 5px; color: #990000;">
+                            Análisis: Tus costos por {u_medida} ({c_kg_f}) &nbsp; <b>superan a tu precio de venta</b> &nbsp; ({p_v_f}).
+                        </div>
+                        """
+                        st.markdown(texto_html, unsafe_allow_html=True)
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
-                        texto_r = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f})."
-                        st.info(texto_r)
-
+                        # Espacios forzados con &nbsp;
+                        texto_html = f"""
+                        <div style="background-color: #d4edda; padding: 10px; border-radius: 5px; color: #155724;">
+                            Análisis: Tus costos por {u_medida} ({c_kg_f}) &nbsp; <b>comparados con tu precio</b> &nbsp; ({p_v_f}).
+                        </div>
+                        """
+                        st.markdown(texto_html, unsafe_allow_html=True)
+        
                 except Exception as e:
-                    # Si el error es por la unidad, este bloque nos salvará y mostrará el análisis
-                    texto_error = f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f})."
-                    st.info(texto_error)
-                    # Imprime el error en la consola para que tú lo veas pero no bloquee la app
-                    print(f"Error en consultoría: {e}")
+                    # Versión de emergencia si falla 'row'
+                    st.info(f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f}).")
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
