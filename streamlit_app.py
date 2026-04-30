@@ -232,36 +232,31 @@ else:
                 st.markdown("---")
                 st.subheader("💡 Recomendación de Consultoría")
 
-                try:
-                    # Definición segura de unidad
-                    u_medida = str(row['Unidad']) if ('Unidad' in row and pd.notna(row['Unidad'])) else "unidades"
-                    
-                    # Formateamos los números antes para que el HTML sea limpio
-                    c_kg_f = f"${costo_kg:,.0f}"
-                    p_v_f = f"${p_venta:,.0f}"
-        
-                    if ganancia < 0:
-                        st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
-                        # Usamos &nbsp; que es un espacio forzado en HTML
-                        texto_html = f"""
-                        <div style="background-color: #ffcccc; padding: 15px; border-radius: 8px; color: #990000; border: 1px solid #ebccd1;">
-                            <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; superan tu precio de venta &nbsp;({p_v_f}), lo que está generando pérdidas.
-                        </div>
-                        """
-                        st.markdown(texto_html, unsafe_allow_html=True)
-                    else:
-                        st.success(f"✅ ¡Tu finca es rentable!")
-                        # VERSIÓN PARA RENTABILIDAD
-                        texto_html = f"""
-                        <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; color: #155724; border: 1px solid #d6e9c6;">
-                            <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; comparados con tu precio de venta &nbsp;({p_v_f})&nbsp; te dejan un margen positivo.
-                        </div>
-                        """
-                        st.markdown(texto_html, unsafe_allow_html=True)
-        
-                except Exception as e:
-                    # Versión de emergencia si falla 'row'
-                    st.info(f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f}).")
+                # Definimos variables seguras primero
+                u_medida = str(row['Unidad']) if ('Unidad' in row and pd.notna(row['Unidad'])) else "unidad"
+                c_kg_f = f"${costo_kg:,.0f}"
+                p_v_f = f"${p_venta:,.0f}"
+
+                if ganancia < 0:
+                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
+                    # Usamos Markdown con viñetas para forzar saltos de línea y que nada se pegue
+                    mensaje_per = f"""
+                    **Análisis de situación:**
+                    *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
+                    *   Tu precio de venta: &nbsp; **{p_v_f}**
+                    *   **Resultado:** El costo supera al precio de venta.
+                    """
+                    st.warning(mensaje_per)
+                else:
+                    st.success(f"✅ ¡Tu finca es rentable!")
+                    # La misma estructura para cuando hay ganancia
+                    mensaje_ren = f"""
+                    **Análisis de rentabilidad:**
+                    *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
+                    *   Tu precio de venta: &nbsp; **{p_v_f}**
+                    *   **Resultado:** Tienes un margen de ganancia positivo.
+                    """
+                    st.info(mensaje_ren)
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
