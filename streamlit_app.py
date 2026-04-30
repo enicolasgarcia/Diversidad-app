@@ -232,31 +232,35 @@ else:
                 st.markdown("---")
                 st.subheader("💡 Recomendación de Consultoría")
 
-                # Definimos variables seguras primero
-                u_medida = str(row['Unidad']) if ('Unidad' in row and pd.notna(row['Unidad'])) else "unidad"
-                c_kg_f = f"${costo_kg:,.0f}"
-                p_v_f = f"${p_venta:,.0f}"
+                # 1. Definimos las variables de forma ULTRA SEGURA fuera de cualquier try
+                # Si 'row' existe, sacamos los datos; si no, ponemos valores por defecto
+                try:
+                    u_medida = str(row['Unidad']) if (pd.notna(row['Unidad'])) else "unidad"
 
-                if ganancia < 0:
-                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
-                    # Usamos Markdown con viñetas para forzar saltos de línea y que nada se pegue
-                    mensaje_per = f"""
-                    **Análisis de situación:**
-                    *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
-                    *   Tu precio de venta: &nbsp; **{p_v_f}**
-                    *   **Resultado:** El costo supera al precio de venta.
-                    """
-                    st.warning(mensaje_per)
-                else:
-                    st.success(f"✅ ¡Tu finca es rentable!")
-                    # La misma estructura para cuando hay ganancia
-                    mensaje_ren = f"""
-                    **Análisis de rentabilidad:**
-                    *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
-                    *   Tu precio de venta: &nbsp; **{p_v_f}**
-                    *   **Resultado:** Tienes un margen de ganancia positivo.
-                    """
-                    st.info(mensaje_ren)
+                    c_kg_f = f"${costo_kg:,.0f}"
+                    p_v_f = f"${p_venta:,.0f}"
+
+                    # 2. Lógica de mensajes con formato de lista (imposible que se pegue)
+                    if ganancia < 0:
+                        st.error(f"🔴 La finca presenta PÉRDIDA.")
+                        mensaje_per = f"""
+                        **Análisis de situación:**
+                        *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
+                        *   Tu precio de venta: &nbsp; **{p_v_f}**
+                        *   **Resultado:** El costo supera al precio de venta.
+                        """
+                        st.warning(mensaje_per)
+                    else:
+                        st.success(f"✅ ¡Tu finca es rentable!")
+                        mensaje_ren = f"""
+                        **Análisis de rentabilidad:**
+                        *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
+                        *   Tu precio de venta: &nbsp; **{p_v_f}**
+                        *   **Resultado:** Tienes un margen de ganancia positivo.
+                        """
+                        st.info(mensaje_ren)
+                except:
+                    u_medida = "unidad"
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
