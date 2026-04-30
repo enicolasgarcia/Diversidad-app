@@ -232,18 +232,27 @@ else:
                 st.markdown("---")
                 st.subheader("💡 Recomendación de Consultoría")
 
-                # Buscamos la unidad para este registro específico (asumiendo que viene de tu dataframe 'row' o 'finca_sel')
-                # Si usas 'row', asegúrate de haberla definido antes; si no, el código buscará la unidad
-                u_medida = row['Unidad'] if 'Unidad' in row.columns else "Kg"
+                try:
+                    # Buscamos la unidad de forma segura
+                    # Si 'row' existe, la tomamos de ahí. Si no, usamos "Kilos"
+                    if 'Unidad' in row:
+                        u_medida = row['Unidad']
+                    else:
+                        u_medida = "Kilos"
 
-                if ganancia < 0:
-                    st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
-                    # Aquí añadimos los espacios clave: " superan a tu precio de venta "
-                    st.warning(f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) superan a tu precio de venta (${p_venta:,.0f}).")
-                else:
-                    st.success(f"✅ ¡Tu finca es rentable!")
-                    # También corregimos el mensaje de éxito para que sea profesional y espaciado
-                    st.info(f"Análisis: Tienes un margen de ${(p_venta - costo_kg):,.0f} por {u_medida.lower()}.")
+                    if ganancia < 0:
+                        st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
+                        # El mensaje con los espacios corregidos para que no se pegue
+                        st.warning(f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) superan a tu precio de venta (${p_venta:,.0f}).")
+                    else:
+                        st.success(f"✅ ¡Tu finca es rentable!")
+                        st.info(f"Análisis: Tienes un margen de ${(p_venta - costo_kg):,.0f} por {u_medida.lower()}.")
+        
+                except NameError:
+                    # Por si la variable 'row' no está definida en esa parte del código
+                    st.warning(f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) comparados con tu precio (${p_venta:,.0f}).")
+                except Exception as e:
+                    st.error(f"Nota: Revisa que la columna 'Unidad' exista en tu Excel de Fincas.")
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
