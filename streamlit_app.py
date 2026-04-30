@@ -246,14 +246,23 @@ else:
                         st.warning(f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) superan a tu precio de venta (${p_venta:,.0f}).")
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
-                        # Usamos comas en el f-string para asegurar que Python separe los bloques
-                        texto_exito = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) " + "comparados  con  tu  precio " + f"(${p_venta:,.0f})."
-                        st.info(texto_exito)
+                        # Usamos comas para que Streamlit fuerce el espacio entre cada parte
+                        st.info(
+                            "Análisis: Tus costos por", 
+                            u_medida, 
+                            f"(${costo_kg:,.0f})", 
+                            "comparados con tu precio", 
+                            f"(${p_venta:,.0f})."
+                        )
 
-                except Exception as e:
-                    # Forzamos el espacio con un "+" para que no haya duda
-                    texto_error = f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) " + "comparados con tu precio " + f"(${p_venta:,.0f})."
-                    st.info(texto_error)
+            except Exception as e:
+                # Aplicamos lo mismo en el except por seguridad
+                st.info(
+                    "Análisis: Tus costos por unidad", 
+                    f"(${costo_kg:,.0f})", 
+                    "comparados con tu precio", 
+                    f"(${p_venta:,.0f})."
+                )
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
