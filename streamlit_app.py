@@ -250,10 +250,10 @@ else:
                         texto_exito = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) " + "comparados con tu precio " + f"(${p_venta:,.0f})."
                         st.info(texto_exito)
 
-            except Exception as e:
-                # Forzamos el espacio con un "+" para que no haya duda
-                texto_error = f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) " + "comparados con tu precio " + f"(${p_venta:,.0f})."
-                st.info(texto_error)
+                except Exception as e:
+                    # Forzamos el espacio con un "+" para que no haya duda
+                    texto_error = f"Análisis: Tus costos por unidad (${costo_kg:,.0f}) " + "comparados con tu precio " + f"(${p_venta:,.0f})."
+                    st.info(texto_error)
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
