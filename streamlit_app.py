@@ -255,14 +255,14 @@ else:
                             f"(${p_venta:,.0f})."
                         )
 
-            except Exception as e:
-                # Aplicamos lo mismo en el except por seguridad
-                st.info(
-                    "Análisis: Tus costos por unidad", 
-                    f"(${costo_kg:,.0f})", 
-                    "comparados con tu precio", 
-                    f"(${p_venta:,.0f})."
-                )
+                except Exception as e:
+                    # Aplicamos lo mismo en el except por seguridad
+                    st.info(
+                        "Análisis: Tus costos por unidad", 
+                        f"(${costo_kg:,.0f})", 
+                        "comparados con tu precio", 
+                        f"(${p_venta:,.0f})."
+                    )
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
