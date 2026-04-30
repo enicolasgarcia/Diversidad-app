@@ -244,17 +244,17 @@ else:
                         st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
                         # Usamos &nbsp; que es un espacio forzado en HTML
                         texto_html = f"""
-                        <div style="background-color: #ffcccc; padding: 10px; border-radius: 5px; color: #990000;">
-                            Análisis: Tus costos por {u_medida} ({c_kg_f}) &nbsp; <b>superan a tu precio de venta</b> &nbsp; ({p_v_f}).
+                        <div style="background-color: #ffcccc; padding: 15px; border-radius: 8px; color: #990000; border: 1px solid #ebccd1;">
+                            <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; superan tu precio de venta &nbsp;({p_v_f}), lo que está generando pérdidas.
                         </div>
                         """
                         st.markdown(texto_html, unsafe_allow_html=True)
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
-                        # Espacios forzados con &nbsp;
+                        # VERSIÓN PARA RENTABILIDAD
                         texto_html = f"""
-                        <div style="background-color: #d4edda; padding: 10px; border-radius: 5px; color: #155724;">
-                            Análisis: Tus costos por {u_medida} ({c_kg_f}) &nbsp; <b>comparados con tu precio</b> &nbsp; ({p_v_f}).
+                        <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; color: #155724; border: 1px solid #d6e9c6;">
+                            <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; comparados con tu precio de venta &nbsp;({p_v_f})&nbsp; te dejan un margen positivo.
                         </div>
                         """
                         st.markdown(texto_html, unsafe_allow_html=True)
