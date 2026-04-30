@@ -97,9 +97,16 @@ else:
                     inv_ini = st.number_input("Inversión Inicial ($)", min_value=0)
                     costo_mes = st.number_input("Costo Mensual ($)", min_value=0)
                 with c2:
-                    prod_est = st.number_input("Producción Est. (Kilos)", min_value=1)
-                    precio_v = st.number_input("Tu Precio de Venta por Kg ($)", min_value=0)
-                    ubicacion = st.text_input("Departamento/Municipio")
+                    # Dividimos c2 en dos pequeñas columnas para Cantidad y Unidad
+                    col_cant, col_unid = st.columns([2, 1])
+                    with col_cant:
+                        prod_est = st.number_input("Producción Est.", min_value=1)
+                    with col_unid:
+                        # Selector de unidades solicitado
+                        unidad_elegida = st.selectbox("Unidad", ["Kilos", "Quintales", "Libras", "Bultos"])
+                    
+                    precio_v = st.number_input(f"Precio de Venta por {unidad_elegida} ($)", min_value=0)
+                    ubicacion = st.text_input("Departamento / Municipio") # Añadí espacio para que no pegue
                     meses = st.number_input("Duración del cultivo (meses)", min_value=1)
                 
                 submit_finca = st.form_submit_button("Guardar Datos")
@@ -109,7 +116,7 @@ else:
                         nueva_finca = pd.DataFrame([{
                             "Productor": st.session_state.nombre_usuario, "Finca": nom_finca,
                             "Cultivo": cultivo, "Inversion": inv_ini, "Costo_Mensual": costo_mes,
-                            "Produccion": prod_est, "Unidad": "Kilos", "Ubicacion": ubicacion,
+                            "Produccion": prod_est, "Unidad": unidad_elegida, "Ubicacion": ubicacion,
                             "Meses": meses, "Precio_Venta": precio_v
                         }])
                         try:
@@ -125,60 +132,67 @@ else:
         st.markdown("---")
         st.subheader("🔔 Notificaciones de Interés")
         try:
-            # 1. Lectura de datos
             df_o_read = conn.read(worksheet="Ofertas", ttl=0)
             df_u_read = conn.read(worksheet="Usuarios", ttl=0)
-            df_f_read = conn.read(worksheet="Fincas", ttl=0) # <--- Nueva lectura
+            df_f_read = conn.read(worksheet="Fincas", ttl=0) 
             
             u_clean = str(st.session_state.nombre_usuario).strip().lower()
             df_o_read['Estado'] = df_o_read['Estado'].fillna('Pendiente')
             
-            # 2. Filtrado de notas pendientes
             mis_notas = df_o_read[
                 (df_o_read['Productor'].astype(str).str.strip().str.lower() == u_clean) & 
                 (df_o_read['Estado'] != 'Vendido')
             ]
             
-            # 3. Mostrar notificaciones o mensaje de vacío
             if not mis_notas.empty:
                 for i, o in mis_notas.iterrows():
-                    # --- NUEVA LÓGICA DE UNIDADES ---
-                    # Buscamos en Fincas el producto de este productor para sacar la cantidad
+                    # 1. Buscamos la unidad guardada en Fincas
                     detalle = df_f_read[
                         (df_f_read['Productor'].astype(str).str.strip().str.lower() == u_clean) & 
                         (df_f_read['Cultivo'].astype(str).str.strip() == str(o['Producto']).strip())
                     ]
                     
-                    cantidad_texto = ""
+                    # 2. Construimos el texto de cantidad de forma limpia
                     if not detalle.empty:
-                        # Asumiendo que en Fincas la cantidad está en 'Produccion'
-                        # Si tienes una columna de unidad (Kg, Bultos), la puedes sumar aquí
-                        cantidad_texto = f"{detalle.iloc[0]['Produccion']} Kg" 
-                    # --------------------------------
+                        valor = detalle.iloc[0]['Produccion']
+                        # Si no tienes columna 'Unidad' aún, por defecto dirá Kilos
+                        u_medida = detalle.iloc[0]['Unidad'] if 'Unidad' in detalle.columns else "Kilos"
+                        cantidad_texto = f"{valor} {u_medida}"
+                    else:
+                        cantidad_texto = "la cantidad acordada"
                     
                     interesado_nombre = str(o['Interesado']).strip()
                     user_data = df_u_read[df_u_read['Nombre'].astype(str).str.strip() == interesado_nombre]
                     
-                    col_info, col_whatsapp, col_accion = st.columns([2, 1, 1])
-                    
-                    with col_info:
-                        # Ahora el mensaje incluye la cantidad y unidad
-                        st.info(f"📩 **{o['Interesado']}** quiere tus **{cantidad_texto}** de **{o['Producto']}**")
-                    
-                    with col_whatsapp:
-                        if not user_data.empty:
-                            tel = "".join(filter(str.isdigit, str(user_data.iloc[0]['Telefono'])))
-                            if not tel.startswith("57"): tel = "57" + tel
-                            # Mensaje de WhatsApp también actualizado
-                            msg = f"https://wa.me/{tel}?text=Hola%20vi%20tu%20interes%20en%20mis%20{cantidad_texto}%20de%20{o['Producto']}"
-                            st.link_button("💬 Hablar", msg)
-                    
-                    with col_accion:
-                        if st.button("✅ Vendido", key=f"btn_{i}"):
-                            df_o_read.at[i, 'Estado'] = 'Vendido'
-                            conn.update(worksheet="Ofertas", data=df_o_read)
-                            st.success("¡Venta registrada!")
-                            st.rerun()
+                    # --- DISEÑO MEJORADO ---
+                    with st.container():
+                        col_info, col_whatsapp, col_accion = st.columns([2, 1, 1])
+                        
+                        with col_info:
+                            # Texto con espacios y negritas claras
+                            st.markdown(f"📩 **{o['Interesado']}** está interesado en:")
+                            st.info(f"📦 {cantidad_texto} de **{o['Producto']}**")
+                        
+                        with col_whatsapp:
+                            if not user_data.empty:
+                                tel = "".join(filter(str.isdigit, str(user_data.iloc[0]['Telefono'])))
+                                if not tel.startswith("57"): tel = "57" + tel
+                                
+                                # Mensaje de WhatsApp con espacios (usando %20 para URL segura)
+                                msg_wa = f"Hola, vi que estás interesado en mis {cantidad_texto} de {o['Producto']}. ¿Hablamos?"
+                                url_wa = f"https://wa.me/{tel}?text={msg_wa.replace(' ', '%20')}"
+                                
+                                st.write("") # Espacio visual
+                                st.link_button("💬 Hablar", url_wa)
+                        
+                        with col_accion:
+                            st.write("") # Espacio visual
+                            if st.button("✅ Vendido", key=f"btn_{i}"):
+                                df_o_read.at[i, 'Estado'] = 'Vendido'
+                                conn.update(worksheet="Ofertas", data=df_o_read)
+                                st.success("¡Venta registrada!")
+                                st.rerun()
+                        st.divider() # Línea sutil para separar cada oferta
             else:
                 st.write("No tienes ofertas pendientes por ahora.")
 
