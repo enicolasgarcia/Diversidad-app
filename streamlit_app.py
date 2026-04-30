@@ -247,7 +247,7 @@ else:
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
                         # Usamos comas en el f-string para asegurar que Python separe los bloques
-                        texto_exito = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) " + "comparados con tu precio " + f"(${p_venta:,.0f})."
+                        texto_exito = f"Análisis: Tus costos por {u_medida} (${costo_kg:,.0f}) " + "comparados  con  tu  precio " + f"(${p_venta:,.0f})."
                         st.info(texto_exito)
 
                 except Exception as e:
