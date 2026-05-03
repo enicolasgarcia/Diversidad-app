@@ -233,16 +233,16 @@ else:
                 st.subheader("💡 Recomendación de Consultoría")
 
                 try:
-                    # 1. Definición de unidad y limpieza de datos
-                    u_medida = str(row['Unidad']) if (pd.notna(row['Unidad'])) else "unidad"
+                    # En lugar de row['Unidad'], usamos una palabra genérica o 
+                    # la lógica que tengas para la unidad más arriba.
+                    u_medida = "unidad" 
             
                     # Convertir p_venta a número por seguridad
                     p_venta_num = float(p_venta) if p_venta else 0.0
             
                     c_kg_f = f"${costo_kg:,.0f}"
                     p_v_f = f"${p_venta_num:,.0f}"
-
-                    # 2. Lógica de mensajes
+        
                     if ganancia < 0:
                         st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
                         mensaje_per = f"""
@@ -255,16 +255,15 @@ else:
             
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
-                        # Usamos el HTML con &nbsp; para blindar los espacios
                         texto_html = f"""
                         <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; color: #155724; border: 1px solid #c3e6cb;">
-                        <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; comparados con tu precio &nbsp;({p_v_f}).
+                            <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; comparados con tu precio &nbsp;({p_v_f}).
                         </div>
                         """
                         st.markdown(texto_html, unsafe_allow_html=True)
 
                 except Exception as e:
-                    # Este mensaje te dirá exactamente qué palabra o variable está fallando
+                    # Esto ya no debería salir, pero si sale, nos dirá por qué
                     st.error(f"❌ Error en recomendación: {e}")
 
                
