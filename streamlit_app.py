@@ -232,35 +232,42 @@ else:
                 st.markdown("---")
                 st.subheader("💡 Recomendación de Consultoría")
 
-                # 1. Definimos las variables de forma ULTRA SEGURA fuera de cualquier try
-                # Si 'row' existe, sacamos los datos; si no, ponemos valores por defecto
                 try:
+                    # 1. Definición de unidad y limpieza de datos
                     u_medida = str(row['Unidad']) if (pd.notna(row['Unidad'])) else "unidad"
-
+            
+                    # Convertir p_venta a número por seguridad
+                    p_venta_num = float(p_venta) if p_venta else 0.0
+            
                     c_kg_f = f"${costo_kg:,.0f}"
-                    p_v_f = f"${p_venta:,.0f}"
+                    p_v_f = f"${p_venta_num:,.0f}"
 
-                    # 2. Lógica de mensajes con formato de lista (imposible que se pegue)
+                    # 2. Lógica de mensajes
                     if ganancia < 0:
-                        st.error(f"🔴 La finca presenta PÉRDIDA.")
+                        st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
                         mensaje_per = f"""
                         **Análisis de situación:**
-                        *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
-                        *   Tu precio de venta: &nbsp; **{p_v_f}**
-                        *   **Resultado:** El costo supera al precio de venta.
+                        * Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
+                        * Tu precio de venta: &nbsp; **{p_v_f}**
+                        * **Resultado:** El costo supera al precio de venta.
                         """
                         st.warning(mensaje_per)
+            
                     else:
                         st.success(f"✅ ¡Tu finca es rentable!")
-                        mensaje_ren = f"""
-                        **Análisis de rentabilidad:**
-                        *   Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
-                        *   Tu precio de venta: &nbsp; **{p_v_f}**
-                        *   **Resultado:** Tienes un margen de ganancia positivo.
+                        # Usamos el HTML con &nbsp; para blindar los espacios
+                        texto_html = f"""
+                        <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; color: #155724; border: 1px solid #c3e6cb;">
+                        <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; comparados con tu precio &nbsp;({p_v_f}).
+                        </div>
                         """
-                        st.info(mensaje_ren)
-                except:
-                    u_medida = "unidad"
+                        st.markdown(texto_html, unsafe_allow_html=True)
+
+                except Exception as e:
+                    # Este mensaje te dirá exactamente qué palabra o variable está fallando
+                    st.error(f"❌ Error en recomendación: {e}")
+
+               
 
                 # --- 3. COMPARATIVA CORABASTOS ---
                 st.subheader("⚖️ Comparativa Corabastos")
