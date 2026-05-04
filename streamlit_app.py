@@ -331,22 +331,22 @@ else:
                                 key=f"cant_{index}"
                             )
                                 
-                                # Cálculo del valor total
-                                precio_unit = float(row['Precio_Venta'])
-                                total_oferta = cantidad_solicitada * precio_unit
-                                st.caption(f"💰 Total: **${total_oferta:,.0f}**")
+                            # Cálculo del valor total
+                            precio_unit = float(row['Precio_Venta'])
+                            total_oferta = cantidad_solicitada * precio_unit
+                            st.caption(f"💰 Total: **${total_oferta:,.0f}**")
                                 
-                                if st.button(f"Ofertar", key=f"btn_{index}"):
-                                    nueva_o = pd.DataFrame([{
-                                        "Productor": row['Productor'],
-                                        "Interesado": st.session_state.nombre_usuario,
-                                        "Producto": row['Cultivo'],
-                                        "Finca": row['Finca'],
-                                        "Cantidad": f"{cantidad_solicitada} {unidad_m}",
-                                        "Total": total_oferta,
-                                        "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
-                                        "Estado": "Pendiente"
-                                    }])
+                            if st.button(f"Ofertar", key=f"btn_{index}"):
+                                nueva_o = pd.DataFrame([{
+                                    "Productor": row['Productor'],
+                                    "Interesado": st.session_state.nombre_usuario,
+                                    "Producto": row['Cultivo'],
+                                    "Finca": row['Finca'],
+                                    "Cantidad": f"{cantidad_solicitada} {unidad_m}",
+                                    "Total": total_oferta,
+                                    "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                                    "Estado": "Pendiente"
+                                }])
                                 
                                 # 2. Guardado en Google Sheets
                                 try:
