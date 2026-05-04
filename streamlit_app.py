@@ -312,10 +312,23 @@ else:
                         c1, c2, c3 = st.columns([2, 2, 1])
                         with c1:
                             st.markdown(f"#### {row['Cultivo']} - Finca {row['Finca']}")
-                            st.caption(f"📍 Ubicación: {row['Ubicacion']}")
+                            st.caption(f"📍 Desde {row['Ubicacion']}")
+                            st.markdown("🚚 **Entrega:** 24 - 48 horas")
+                            st.caption("✅ Incluye transporte | Precio directo del productor")
                         with c2:
-                            st.write(f"**Cantidad:** {row['Produccion']} Kg")
-                            st.write(f"**Precio:** ${float(row['Precio_Venta']):,.0f} / Kg")
+                            unidad_m2 = row['Unidad'] if 'Unidad' in row and pd.notna(row['Unidad']) else "Kg"
+                            precio_productor = float(row['Precio_Venta'])
+                            precio_mercado = precios_corabastos.get(row['Cultivo'], precio_productor)
+                            ahorro = precio_mercado - precio_productor
+                            st.write(f"**Cantidad disponible:** {row['Produccion']} {unidad_m2}")
+                            st.write(f"🏪 Precio mercado: **${precio_mercado:,.0f}** / {unidad_m2}")
+                            st.write(f"🌱 Tu precio: **${precio_productor:,.0f}** / {unidad_m2}")
+                            if ahorro > 0:
+                                st.success(f"💰 Ahorras: **${ahorro:,.0f}** / {unidad_m2}")
+                            elif ahorro < 0:
+                                st.warning(f"⚠️ Este precio está por encima del mercado")
+                            else:
+                                st.info(f"📊 Precio igual al mercado")
                         with c3:
                             # Unidad del cultivo
                             unidad_m = row['Unidad'] if 'Unidad' in row and pd.notna(row['Unidad']) else "Kg"
@@ -336,7 +349,7 @@ else:
                             total_oferta = cantidad_solicitada * precio_unit
                             st.caption(f"💰 Total: **${total_oferta:,.0f}**")
                                 
-                            if st.button(f"Ofertar", key=f"btn_{index}"):
+                            if st.button(f"🛒 Solicitar pedido", key=f"btn_{index}"):
                                 nueva_o = pd.DataFrame([{
                                     "Productor": row['Productor'],
                                     "Interesado": st.session_state.nombre_usuario,
