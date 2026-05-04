@@ -245,22 +245,21 @@ else:
         
                     if ganancia < 0:
                         st.error(f"🔴 La finca {finca_sel} presenta PÉRDIDA.")
-                        mensaje_per = f"""
-                        **Análisis de situación:**
-                        * Tus costos por {u_medida}: &nbsp; **{c_kg_f}**
-                        * Tu precio de venta: &nbsp; **{p_v_f}**
-                        * **Resultado:** El costo supera al precio de venta.
-                        """
-                        st.warning(mensaje_per)
-            
+                        st.warning(f"""
+                        **¿Qué puedes hacer?**
+                        * Aumenta tu precio de venta a mínimo **${costo_kg:,.0f}** por {u_medida}
+                        * Reduce costos mensuales en al menos **${abs(ganancia/float(f['Meses'])):,.0f}** por mes
+                        * Considera aumentar tu producción para diluir los costos fijos
+                        """)
                     else:
-                        st.success(f"✅ ¡Tu finca es rentable!")
-                        texto_html = f"""
-                        <div style="background-color: #d4edda; padding: 15px; border-radius: 8px; color: #155724; border: 1px solid #c3e6cb;">
-                            <b>Análisis:</b> Tus costos por {u_medida} &nbsp;({c_kg_f})&nbsp; comparados con tu precio &nbsp;({p_v_f}).
-                        </div>
-                        """
-                        st.markdown(texto_html, unsafe_allow_html=True)
+                        margen = ((p_venta - costo_kg) / p_venta * 100) if p_venta > 0 else 0
+                        st.success(f"✅ ¡Tu finca es rentable! Margen: {margen:.1f}%")
+                        if margen < 20:
+                            st.info("⚠️ Tu margen es bajo. Intenta subir el precio o reducir costos.")
+                        elif margen >= 20 and margen < 50:
+                            st.info("👍 Buen margen. Mantén tus costos controlados.")
+                        else:
+                            st.info("🚀 ¡Excelente margen! Considera expandir tu producción.")
 
                 except Exception as e:
                     # Esto ya no debería salir, pero si sale, nos dirá por qué
