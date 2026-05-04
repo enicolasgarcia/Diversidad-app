@@ -317,16 +317,36 @@ else:
                             st.write(f"**Cantidad:** {row['Produccion']} Kg")
                             st.write(f"**Precio:** ${float(row['Precio_Venta']):,.0f} / Kg")
                         with c3:
-                            if st.button(f"Ofertar", key=f"btn_{index}"):
-                                # 1. Preparamos el registro con estado 'Pendiente'
-                                nueva_o = pd.DataFrame([{
-                                    "Productor": row['Productor'],
-                                    "Interesado": st.session_state.nombre_usuario,
-                                    "Producto": row['Cultivo'],
-                                    "Finca": row['Finca'],
-                                    "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
-                                    "Estado": "Pendiente" # <-- Esto automatiza tu Excel
-                                }])
+                            # Unidad del cultivo
+                            unidad_m = row['Unidad'] if 'Unidad' in row and pd.notna(row['Unidad']) else "Kg"
+                            prod_disponible = float(row['Produccion'])
+                            
+                            # El negocio elige cuánto quiere
+                            cantidad_solicitada = st.number_input(
+                                f"Cantidad ({unidad_m})",
+                                min_value=1.0,
+                                max_value=prod_disponible,
+                                value=min(10.0, prod_disponible),
+                                step=1.0,
+                                key=f"cant_{index}"
+                            )
+                                
+                                # Cálculo del valor total
+                                precio_unit = float(row['Precio_Venta'])
+                                total_oferta = cantidad_solicitada * precio_unit
+                                st.caption(f"💰 Total: **${total_oferta:,.0f}**")
+                                
+                                if st.button(f"Ofertar", key=f"btn_{index}"):
+                                    nueva_o = pd.DataFrame([{
+                                        "Productor": row['Productor'],
+                                        "Interesado": st.session_state.nombre_usuario,
+                                        "Producto": row['Cultivo'],
+                                        "Finca": row['Finca'],
+                                        "Cantidad": f"{cantidad_solicitada} {unidad_m}",
+                                        "Total": total_oferta,
+                                        "Fecha": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                                        "Estado": "Pendiente"
+                                    }])
                                 
                                 # 2. Guardado en Google Sheets
                                 try:
